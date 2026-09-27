@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma de Tests Avanzada Oposiciones UMA</title>
+    <style>
+        :root { --primary: #005a9c; --primary-hover: #004477; --success: #28a745; --danger: #dc3545; --warning: #ffc107; --bg: #f4f7f9; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { max-width: 900px; width: 100%; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 25px rgba(0,0,0,0.06); }
+        h1 { color: var(--primary); text-align: center; margin-bottom: 5px; }
+        h2 { font-size: 1.1rem; color: #666; text-align: center; margin-top: 0; margin-bottom: 25px; }
+        .screen { display: none; }
+        .active { display: block; }
+        .form-group { margin-bottom: 25px; }
+        label.section-title { display: block; font-weight: bold; margin-bottom: 12px; color: var(--primary); border-bottom: 2px solid #eef5fa; padding-bottom: 5px; }
+        .file-zone { border: 2px dashed var(--primary); padding: 35px 25px; text-align: center; border-radius: 8px; background: #fafcff; cursor: pointer; }
+        .file-list { margin-top: 15px; border: 1px solid #ddd; padding: 12px; border-radius: 6px; background: #fff; max-height: 140px; overflow-y: auto; }
+        .file-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; font-size: 0.9rem; align-items: center; }
+        .remove-btn { color: var(--danger); cursor: pointer; font-weight: bold; }
+        .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .tool-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #fff; }
+        .pomodoro-box { display: flex; align-items: center; justify-content: space-between; background: #fdf6e2; border: 1px solid #f5e7c1; padding: 10px 15px; border-radius: 6px; font-weight: bold; }
+        .info-panel { display: flex; justify-content: space-between; background: #eef5fa; padding: 12px 20px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; font-size: 0.95rem; }
+        .timer-alert { color: var(--danger); animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        .question { font-size: 1.25rem; font-weight: 600; margin-bottom: 10px; line-height: 1.4; color: #111; }
+        .question-hint { font-size: 0.9rem; color: #cc6600; font-style: italic; margin-bottom: 20px; font-weight: bold; }
+        .options { list-style-type: none; padding: 0; }
+        .options li { display: flex; align-items: center; gap: 15px; background: #f9f9f9; border: 1px solid #e0e0e0; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; cursor: pointer; transition: background 0.2s; line-height: 1.4; position: relative; }
+        .options li.selected { background: #e3edf7; border-color: var(--primary); }
+        .options li.reveal-correct { background: #d4edda !important; border-color: var(--success) !important; color: #155724; font-weight: bold; }
+        .options li.reveal-incorrect { background: #f8d7da !important; border-color: var(--danger) !important; color: #721c24; }
+        .justification-box { display: none; background: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 15px; border-radius: 6px; margin-top: 15px; font-size: 0.95rem; line-height: 1.4; font-weight: 500; }
+        .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 15px; box-sizing: border-box; }
+        .history-box { border: 1px solid #ddd; border-radius: 6px; background: #fafafa; padding: 15px; max-height: 255px; overflow-y: auto; text-align: left; }
+        .history-item { padding: 10px; border-bottom: 1px solid #eee; margin-bottom: 10px; background: #fff; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .btn { background-color: var(--primary); color: white; border: none; padding: 14px 25px; font-size: 1rem; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; }
+        .btn:hover { background-color: var(--primary-hover); }
+        .btn:disabled { background-color: #ccc; cursor: not-allowed; }
+        .results-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .results-table th, .results-table td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        .results-table th { background-color: #f2f2f2; }
+        .correct { color: #28a745; font-weight: bold; }
+        .incorrect { color: #dc3545; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Oposiciones UMA</h1>
+    <h2>Centro de Simulación Avanzada Estilo Meludus</h2>
+
+    <!-- SCREEN 1: SETUP -->
+    <div id="setup-screen" class="screen active">
+        <div class="tools-grid">
+            <div class="tool-card">
+                <span style="font-weight:bold; color:var(--primary);">⏱️ Herramienta Pomodoro Integrada</span>
+                <div class="pomodoro-box" style="margin-top:8px;">
+                    <span id="pomo-timer">25:00 (Estudio)</span>
+                    <button class="btn" id="btn-toggle-pomo" style="padding:5px 10px; width:auto; font-size:0.8rem; background:var(--primary);">Iniciar/Pausar</button>
+                </div>
+            </div>
+            <div class="tool-card">
+                <span style="font-weight:bold; color:var(--success);">🏆 Tu Progreso Acumulado</span>
+                <div style="margin-top:8px; font-size:0.9rem;">
+                    <div>Tests completados en la sesión: <span id="stat-tests-count" style="font-weight:bold;">0</span></div>
+                    <div>Rendimiento medio absoluto: <span id="stat-avg-score" style="font-weight:bold; color:var(--success);">0%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="section-title">1. Carga los Temas de tu Oposición (.txt):</label>
+            <div class="file-zone" id="drop-file-zone">
+                <p style="margin: 0; font-size: 1.1rem; color: #005a9c; font-weight: bold;">📁 Haz clic en este recuadro para abrir tus carpetas y elegir temas</p>
+                <p style="margin: 8px 0 0 0; font-size: 0.85rem; color: #666;">Permite cargar varios archivos de texto simultáneamente</p>
+                <input type="file" id="file-input" accept=".txt" style="display: none;" multiple>
+            </div>
+            <div id="file-list-container" class="file-list" style="display:none;"></div>
+        </div>
+
+        <div class="form-group" id="mode-group" style="display:none;">
+            <label class="section-title">2. Configuración y Segmentación del Test:</label>
+            <div style="display:flex; gap:20px; margin-bottom:15px;">
+                <label style="cursor:pointer; font-weight:500;"><input type="radio" name="exam-mode" value="general" id="radio-mode-general" checked> Examen General Mezclado</label>
+                <label style="cursor:pointer; font-weight:500;"><input type="radio" name="exam-mode" value="selective" id="radio-mode-selective"> Seleccionar Temas Específicos</label>
+            </div>
+            <div class="file-list" id="theme-selectors-group" style="display:none; max-height:120px;"></div>
+        </div>
+
+        <div class="form-group">
+            <label class="section-title">3. Configurar límite de tiempo por pregunta (Cronómetro Estricto):</label>
+            <select id="time-limit-select">
+                <option value="0">Sin límite de tiempo (Modo Práctica)</option>
+                <option value="30">30 Segundos por pregunta (Rápido)</option>
+                <option value="60" selected>60 Segundos por pregunta (Estándar Oposición)</option>
+                <option value="120">120 Segundos por pregunta (Supuestos extensos)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="section-title" for="num-questions">4. Volumen exacto de preguntas a evaluar:</label>
+            <input type="number" id="num-questions" min="1" value="5">
+        </div>
+        <button id="generate-btn" class="btn" disabled>Carga material normativo para desbloquear...</button>
+    </div>
+
+    <!-- SCREEN 2: INTERACTIVO -->
+    <div id="quiz-screen" class="screen">
+        <div class="info-panel">
+            <span id="question-number">Pregunta 1 de X</span>
+            <span id="timer" style="font-variant-numeric: tabular-nums;">Tiempo Restante: --:--</span>
+        </div>
+        <div id="question-text" class="question">Cargando articulado...</div>
+        <div id="question-hint" class="question-hint"></div>
+        <ul id="options-list" class="options"></ul>
+        <div id="justification-panel" class="justification-box"></div>
+        <button id="next-btn" class="btn" style="margin-top:20px;">Validar Respuesta</button>
+    </div>
+
+    <!-- SCREEN 3: RESULTADOS -->
+    <div id="results-screen" class="screen" style="text-align: center;">
+        <h3>Análisis Métrico Oficial (Fórmula de Examen UMA)</h3>
+        <hr>
+        <table class="results-table">
+            <tr><th>Criterio de Evaluación</th><th>Métrica Alcanzada</th></tr>
+            <tr><td>Preguntas totalmente acertadas</td><td><span id="res-correct" class="correct">0</span></td></tr>
+            <tr><td>Preguntas falladas / Incompletas</td><td><span id="res-incorrect" class="incorrect">0</span></td></tr>
+            <tr><td>Penalización aplicada (Resta 0.33 por fallo)</td><td><span id="res-penalty" class="incorrect">0.00 pts</span></td></tr>
+            <tr><td>Nota final ponderada (Base de 0 a 10)</td><td><span id="res-final-score" style="font-weight: bold; color:var(--primary);">0.00 / 10</span></td></tr>
+            <tr><td>Tiempo total empleado</td><td><span id="res-time" style="font-weight: bold;">00:00</span></td></tr>
+        </table>
+        // PARTE 2: HISTORIAL, POMODORO, CONTROL MULTI-ARCHIVO Y EXTRACTOR CONTEXTUAL
+let uploadedThemesMap = new Map();
+let currentTestQuestions = new Array();
+let currentIndex = 0;
+let correctCount = 0;
+let incorrectCount = 0;
+let startTime, timerInterval;
+
+// Estados de control de examen y cronómetro estricto
+let hasAnsweredCurrentQuestion = false;
+let globalTestsCompleted = 0;
+let globalScoresSum = 0;
+let countdownSeconds = 60;
+let questionTimerInterval = null;
+
+// Estructura para registrar los fallos con opción a buscador
+let wrongQuestionsHistoryList = new Array();
+
+// Temporizador Pomodoro de productividad integrado
+let pomoSeconds = 1500; 
+let pomoInterval = null;
+let pomoIsRunning = false;
+
+function togglePomodoro() {
+    if (pomoIsRunning) {
+        clearInterval(pomoInterval);
+        pomoIsRunning = false;
+    } else {
+        pomoIsRunning = true;
+        pomoInterval = setInterval(function() {
+            if (pomoSeconds > 0) {
+                pomoSeconds--;
+                let m = Math.floor(pomoSeconds / 60).toString().padStart(2, '0');
+                let s = (pomoSeconds % 60).toString().padStart(2, '0');
+                document.getElementById('pomo-timer').innerText = `${m}:${s} (Estudio)`;
+            } else {
+                clearInterval(pomoInterval);
+                alert("¡Tiempo Pomodoro completado! Tómate un breve descanso.");
+                pomoSeconds = 300; 
+                document.getElementById('pomo-timer').innerText = "05:00 (Descanso)";
+                pomoIsRunning = false;
+            }
+        }, 1000);
+    }
+}
+
+// Carga multi-archivo con decodificación segura
+function handleMultipleFiles(event) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    let filesArray = Array.from(files);
+    let loadPromises = filesArray.map(function(file) {
+        return new Promise(function(resolve) {
+            if (file.name.split('.').pop().toLowerCase() !== 'txt') {
+                alert(`El archivo "${file.name}" fue omitido por no ser un .txt válido`);
+                resolve();
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                let themeId = uploadedThemesMap.size + 1;
+                uploadedThemesMap.set(themeId, {
+                    name: file.name.replace('.txt', ''),
+                    content: e.target.result
+                });
+                resolve();
+            };
+            reader.readAsText(file, "ISO-8859-1");
+        });
+    });
+
+    Promise.all(loadPromises).then(function() {
+        refreshSetupUI();
+    });
+}
+
+function refreshSetupUI() {
+    const listContainer = document.getElementById('file-list-container');
+    const checksZone = document.getElementById('theme-selectors-group');
+    
+    listContainer.innerHTML = "";
+    checksZone.innerHTML = "";
+
+    if (uploadedThemesMap.size === 0) {
+        listContainer.style.display = "none";
+        document.getElementById('mode-group').style.display = "none";
+        checksZone.style.display = "none";
+        document.getElementById('generate-btn').disabled = true;
+        document.getElementById('generate-btn').innerText = "Carga material normativo para desbloquear...";
+        return;
+    }
+
+    listContainer.style.display = "block";
+    document.getElementById('mode-group').style.display = "block";
+    document.getElementById('generate-btn').disabled = false;
+    document.getElementById('generate-btn').innerText = "Iniciar Simulación";
+
+    uploadedThemesMap.forEach(function(themeData, id) {
+        let item = document.createElement('div');
+        item.className = 'file-item';
+        item.innerHTML = `<span>Tema ${id}: ${themeData.name}</span> <span class="remove-btn" data-id="${id}">Eliminar</span>`;
+        listContainer.appendChild(item);
+
+        let checkDiv = document.createElement('div');
+        checkDiv.className = 'theme-check-item';
+        checkDiv.style.margin = "5px 10px";
+        checkDiv.innerHTML = `<input type="checkbox" class="theme-select-chk" value="${id}" id="chk-t-${id}" checked> <label style="cursor:pointer;" for="chk-t-${id}">Tema ${id}: ${themeData.name}</label>`;
+        checksZone.appendChild(checkDiv);
+    });
+
+    // Enlazar los botones de eliminar dinámicos creados
+    document.querySelectorAll('.remove-btn').forEach(function(btn) {
+        btn.onclick = function() {
+            removeTheme(parseInt(this.getAttribute('data-id')));
+        };
+    });
+
+    toggleModeViews();
+}
+
+function removeTheme(id) {
+    uploadedThemesMap.delete(id);
+    let tempArray = Array.from(uploadedThemesMap.values());
+    uploadedThemesMap.clear();
+    tempArray.forEach(function(theme, index) {
+        uploadedThemesMap.set(index + 1, theme);
+    });
+    refreshSetupUI();
+}
+
+function toggleModeViews() {
+    const checkedMode = document.querySelector('input[name="exam-mode"]:checked');
+    const isSelective = checkedMode && checkedMode.value === 'selective';
+    document.getElementById('theme-selectors-group').style.display = isSelective ? "block" : "none";
+}
+
+// MOTOR DE EXTRACCIÓN CONTEXTUAL: Genera enunciados dinámicos reales basados en tu propio texto
+function extractQuestionsFromText(text) {
+    const cleanText = text.replace(/\s+/g, ' ');
+    const sentences = cleanText.split(/[.?;:]+/).map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 50; });
+    let dynamicBank = new Array();
+
+    const timeFakes = ["10 días naturales", "15 días hábiles", "1 mes", "3 meses", "6 meses"];
+    const organFakes = ["El Rector", "El Consejo de Gobierno", "El Claustro Universitario", "El Consejo Social", "El Gerente"];
+
+    sentences.forEach(function(sentence, sIdx) {
+        let questionText = "";
+        let finalOptions = new Array(sentence);
+        let answers = new Array(); 
+        answers.push(0); 
+
+        let coreConcept = "";
+        let articleMatch = sentence.match(/artículo\s+\d+|art\.\s*\d+/i);
+        let subjectMatch = sentence.match(/(?:el|la|los|las)\s+([A-ZÁÉÍÓÚa-záéíóúñ]+\s+[a-záéíóúñ]+)/);
+        
+        if (articleMatch) {
+            coreConcept = `lo dispuesto en el ${articleMatch}`;
+        } else if (subjectMatch && subjectMatch && !/para|como|cuando/i.test(subjectMatch)) {
+            coreConcept = `la regulación de: "${subjectMatch.trim()}"`;
+        } else {
+            coreConcept = `el precepto legal extraído de sus apuntes`;
+        }
+
+        if (/días|dias|mes|meses|año|años|\b\d+\b/i.test(sentence)) {
+            questionText = `Teniendo en cuenta lo estipulado literalmente respecto a ${coreConcept}, ¿cuál de las siguientes opciones determina el marco temporal o numérico correcto?`;
+            timeFakes.forEach(function(fake) {
+                if (!sentence.toLowerCase().includes(fake.toLowerCase()) && finalOptions.length < 4) {
+                    finalOptions.push(sentence.replace(/(\b\d+\b\s+(días|dias|meses|años|mes|año)\s*(naturales|hábiles)?)/gi, fake));
+                }
+            });
+        } else if (/rector|consejo|claustro|gerente|órgano/i.test(sentence)) {
+            let organFound = sentence.match(/rector|consejo de gobierno|claustro|gerente/i);
+            let specificOrgan = organFound ? organFound : "los órganos institucionales";
+            questionText = `Analice las funciones, composición o directrices descritas en relación con ${specificOrgan} y determine qué opción se ajusta con total exactitud a la norma:`;
+            
+            organFakes.forEach(function(organ) {
+                if (!sentence.toLowerCase().includes(organ.toLowerCase()) && finalOptions.length < 4) {
+                    let fakeS = sentence.replace(/rector|consejo de gobierno|claustro|gerente/gi, organ);
+                    if (fakeS !== sentence) finalOptions.push(fakeS);
+                }
+            });
+        } else {
+            questionText = `Examine las directrices, obligaciones y requisitos estipuladas en el temario relativos a ${coreConcept}. Señale la opción correcta:`;
+            finalOptions.push(
+                sentence.replace(/deberá|deberán|obligados|obligado/gi, "no será obligatorio en ningún caso"),
+                sentence.replace(/siempre/gi, "nunca, salvo disposición contraria en el BOE,")
+            );
+        }
+
+        if (finalOptions.length >= 2 && Math.random() > 0.75 && sentences[sIdx + 1] && finalOptions.length < 4) {
+            finalOptions.push(sentences[sIdx + 1]);
+            answers.push(finalOptions.length - 1);
+        }
+
+        while (finalOptions.length < 4) {
+            finalOptions.push("Ninguna de las opciones anteriores se corresponde fielmente con la literalidad exacta de la ley subida.");
+        }
+
+        if (questionText && finalOptions.length === 4) {
+            dynamicBank.push({ 
+                question: questionText, 
+                options: finalOptions, 
+                answers: answers,
+                justification: sentence 
+            });
+        }
+    });
+
+    if (dynamicBank.length === 0 && sentences.length >= 3) {
+        for (let i = 0; i < sentences.length - 2; i++) {
+            let fallbackAnswers = new Array();
+            fallbackAnswers.push(0);
+            dynamicBank.push({
+                question: `Determine cuál de los siguientes enunciados extraídos del texto se corresponde con total fidelidad a la norma aportada:`,
+                options: [sentences[i], sentences[i+1], sentences[i+2], "Todas las opciones anteriores han sido modificadas."],
+                answers: fallbackAnswers,
+                justification: sentences[i]
+            });
+        }
+    }
+    return dynamicBank;
+}
+// PARTE 3A: ALGORITMO DE MEZCLA, PROCESAMIENTO GENERAL Y CONTROL DE TIEMPO ESTRICTO
+function shuffleQuestion(q) {
+    let indices = q.options.map(function(_, i) { return i; });
+    for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        let temp = indices[i];
+        indices[i] = indices[j];
+        indices[j] = temp;
+    }
+    let newOpts = indices.map(function(i) { return q.options[i]; });
+    let newAnsw = q.answers.map(function(oldIdx) { return indices.indexOf(oldIdx); });
+    q.options = newOpts;
+    q.answers = newAnsw;
+    return q;
+}
+
+function buildCustomTest() {
+    const checkedMode = document.querySelector('input[name="exam-mode"]:checked');
+    const mode = checkedMode ? checkedMode.value : 'general';
+    const reqCount = parseInt(document.getElementById('num-questions').value);
+    
+    let activeContentText = "";
+
+    if (mode === 'general') {
+        uploadedThemesMap.forEach(function(themeData) {
+            activeContentText += " " + themeData.content;
+        });
+    } else {
+        const checkedBoxes = document.querySelectorAll('.theme-select-chk:checked');
+        if (checkedBoxes.length === 0) {
+            alert("Por favor, marca al menos uno de los temas para poder generar el test.");
+            return;
+        }
+        checkedBoxes.forEach(function(chk) {
+            let id = parseInt(chk.value);
+            if (uploadedThemesMap.has(id)) {
+                activeContentText += " " + uploadedThemesMap.get(id).content;
+            }
+        });
+    }
+
+    if (!activeContentText || activeContentText.trim().length < 100) {
+        alert("El contenido de los temas seleccionados está vacío o es insuficiente.");
+        return;
+    }
+
+    let pool = extractQuestionsFromText(activeContentText);
+    
+    if (pool.length === 0) {
+        alert("No se han podido estructurar preguntas con el contenido de los textos elegidos.");
+        return;
+    }
+
+    pool.sort(function() { return Math.random() - 0.5; });
+    currentTestQuestions = pool.slice(0, reqCount).map(function(q) { return shuffleQuestion(q); });
+
+    document.getElementById('setup-screen').classList.remove('active');
+    document.getElementById('quiz-screen').classList.add('active');
+
+    currentIndex = 0; correctCount = 0; incorrectCount = 0;
+    wrongQuestionsHistoryList = new Array();
+    
+    startTime = Date.now();
+    timerInterval = setInterval(updateGlobalTimer, 1000);
+    
+    renderQuestion();
+}
+
+let totalElapsedSeconds = 0;
+function updateGlobalTimer() {
+    totalElapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+}
+
+function startQuestionCountdown() {
+    const limit = parseInt(document.getElementById('time-limit-select').value);
+    clearInterval(questionTimerInterval);
+    
+    if (limit === 0) {
+        document.getElementById('timer').innerText = "Modo Práctica (Sin límite)";
+        document.getElementById('timer').classList.remove('timer-alert');
+        return;
+    }
+
+    countdownSeconds = limit;
+    updateCountdownUI();
+
+    questionTimerInterval = setInterval(function() {
+        if (countdownSeconds > 0) {
+            countdownSeconds--;
+            updateCountdownUI();
+        } else {
+            clearInterval(questionTimerInterval);
+            handleTimeOut();
+        }
+    }, 1000);
+}
+
+function updateCountdownUI() {
+    let m = Math.floor(countdownSeconds / 60).toString().padStart(2, '0');
+    let s = (countdownSeconds % 60).toString().padStart(2, '0');
+    const timerSpan = document.getElementById('timer');
+    timerSpan.innerText = `Tiempo Restante: ${m}:${s}`;
+    
+    if (countdownSeconds <= 10) {
+        timerSpan.classList.add('timer-alert');
+    } else {
+        timerSpan.classList.remove('timer-alert');
+    }
+}
+
+function handleTimeOut() {
+    alert("¡Tiempo agotado en esta pregunta! Cuenta como respuesta incompleta/incorrecta.");
+    hasAnsweredCurrentQuestion = true;
+    incorrectCount++;
+    
+    const q = currentTestQuestions[currentIndex];
+    
+    wrongQuestionsHistoryList.push({
+        question: q.question,
+        userAnswer: "NO CONTESTADA (Tiempo agotado)",
+        correctAnswer: q.options[q.answers] || "Desconocida", 
+        justification: q.justification
+    });
+
+    q.options.forEach(function(_, idx) {
+        const li = document.getElementById(`opt-item-${idx}`);
+        if (q.answers.includes(idx)) li.classList.add('reveal-correct');
+    });
+
+    document.getElementById('justification-panel').innerHTML = `<strong>📖 Fundamentación Jurídica / Texto del BOE:</strong><br>${q.justification}`;
+    document.getElementById('justification-panel').style.display = "block";
+    document.getElementById('next-btn').innerText = (currentIndex === currentTestQuestions.length - 1) ? "Finalizar Test" : "Siguiente Pregunta";
+}
+// PARTE 3B: RENDERIZADO, VALIDACIÓN EN VIVO, BUSCADOR DE ERRORES Y ENLACES AUTOMÁTICOS
+function renderQuestion() {
+    hasAnsweredCurrentQuestion = false;
+    const q = currentTestQuestions[currentIndex];
+    
+    document.getElementById('next-btn').innerText = "Validar Respuesta";
+    document.getElementById('question-number').innerText = `Pregunta ${currentIndex + 1} de ${currentTestQuestions.length}`;
+    document.getElementById('question-text').innerText = q.question;
+    document.getElementById('justification-panel').style.display = "none";
+    
+    document.getElementById('question-hint').innerText = q.answers.length === 1 ? 
+        "⚠️ Selección Única (1 correcta)" : `⚠️ Selección Múltiple (${q.answers.length} correctas)`;
+
+    const list = document.getElementById('options-list');
+    list.innerHTML = '';
+
+    q.options.forEach(function(opt, idx) {
+        const li = document.createElement('li');
+        li.id = `opt-item-${idx}`;
+        
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.value = idx;
+        chk.className = 'answer-checkbox';
+
+        li.onclick = function(e) {
+            if (hasAnsweredCurrentQuestion) return; 
+            if (e.target !== chk) chk.checked = !chk.checked;
+            li.classList.toggle('selected', chk.checked);
+        };
+
+        const lbl = document.createElement('label');
+        lbl.innerText = opt;
+        lbl.style.cursor = 'pointer';
+
+        li.appendChild(chk);
+        li.appendChild(lbl);
+        list.appendChild(li);
+    });
+
+    startQuestionCountdown();
+}
+
+function handleNavigationButton() {
+    if (!hasAnsweredCurrentQuestion) {
+        processAndRevealAnswer();
+    } else {
+        advanceToNextQuestion();
+    }
+}
+
+function processAndRevealAnswer() {
+    clearInterval(questionTimerInterval); 
+    const chks = document.querySelectorAll('.answer-checkbox:checked');
+    const userSel = Array.from(chks).map(function(c) { return parseInt(c.value); }).sort();
+    
+    if (userSel.length === 0) {
+        alert("Por favor, selecciona al menos una opción para poder validar.");
+        return;
+    }
+
+    hasAnsweredCurrentQuestion = true;
+    const q = currentTestQuestions[currentIndex];
+    const correctSel = Array.from(q.answers).sort();
+    
+    const ok = userSel.length === correctSel.length && userSel.every(function(v, i) { return v === correctSel[i]; });
+
+    let stringUserAnswers = userSel.map(function(idx) { return q.options[idx]; }).join(" | ");
+
+    if (ok) {
+        correctCount++;
+    } else {
+        incorrectCount++;
+        wrongQuestionsHistoryList.push({
+            question: q.question,
+            userAnswer: stringUserAnswers,
+            correctAnswer: q.options[q.answers] || "Varios supuestos",
+            justification: q.justification
+        });
+    }
+
+    q.options.forEach(function(_, idx) {
+        const li = document.getElementById(`opt-item-${idx}`);
+        const isCorrect = q.answers.includes(idx);
+        const isSelected = userSel.includes(idx);
+
+        li.classList.remove('selected');
+        if (isCorrect) {
+            li.classList.add('reveal-correct'); 
+        } else if (isSelected && !isCorrect) {
+            li.classList.add('reveal-incorrect'); 
+        }
+    });
+
+    document.getElementById('justification-panel').innerHTML = `<strong>📖 Fundamentación Jurídica / Texto del BOE:</strong><br>${q.justification}`;
+    document.getElementById('justification-panel').style.display = "block";
+    document.getElementById('next-btn').innerText = (currentIndex === currentTestQuestions.length - 1) ? "Finalizar Test" : "Siguiente Pregunta";
+}
+
+function advanceToNextQuestion() {
+    if (currentIndex < currentTestQuestions.length - 1) {
+        currentIndex++;
+        renderQuestion();
+    } else {
+        finalizeExam();
+    }
+}
+
+function finalizeExam() {
+    clearInterval(timerInterval);
+    clearInterval(questionTimerInterval);
+    
+    document.getElementById('quiz-screen').classList.remove('active');
+    document.getElementById('results-screen').classList.add('active');
+
+    let penaltyValue = incorrectCount * 0.333;
+    let rawScore = correctCount - penaltyValue;
+    if (rawScore < 0) rawScore = 0;
+    let finalWeightedScore = (rawScore / currentTestQuestions.length) * 10;
+
+    let finM = Math.floor(totalElapsedSeconds / 60).toString().padStart(2, '0');
+    let finS = (totalElapsedSeconds % 60).toString().padStart(2, '0');
+
+    document.getElementById('res-correct').innerText = correctCount;
+    document.getElementById('res-incorrect').innerText = incorrectCount;
+    document.getElementById('res-penalty').innerText = `-${penaltyValue.toFixed(2)} pts`;
+    document.getElementById('res-final-score').innerText = `${finalWeightedScore.toFixed(2)} / 10`;
+    document.getElementById('res-time').innerText = `${finM}:${finS}`;
+
+    globalTestsCompleted++;
+    let accuracyPercent = (correctCount / currentTestQuestions.length) * 100;
+    globalScoresSum += accuracyPercent;
+    
+    document.getElementById('stat-tests-count').innerText = globalTestsCompleted;
+    document.getElementById('stat-avg-score').innerText = `${Math.round(globalScoresSum / globalTestsCompleted)}%`;
+
+    renderWrongQuestionsList(wrongQuestionsHistoryList);
+}
+
+function renderWrongQuestionsList(list) {
+    const box = document.getElementById('wrong-questions-history');
+    box.innerHTML = "";
+
+    if (list.length === 0) {
+        box.innerHTML = "<div style='color:var(--success); font-weight:bold; text-align:center;'>🎉 ¡Enhorabuena! No cometiste ningún fallo en este ejercicio.</div>";
+        return;
+    }
+
+    list.forEach(function(item) {
+        let itemDiv = document.createElement('div');
+        itemDiv.className = 'history-item';
+        itemDiv.innerHTML = `
+            <div style="font-weight:bold; color:var(--primary); margin-bottom:5px;">❓ Enunciado: ${item.question}</div>
+            <div style="font-size:0.9rem; margin-bottom:3px;"><span style="color:var(--danger); font-weight:600;">Marcaste:</span> ${item.userAnswer}</div>
+            <div style="font-size:0.9rem; margin-bottom:5px;"><span style="color:var(--success); font-weight:600;">Solución exacta:</span> ${item.correctAnswer}</div>
+            <div style="font-size:0.85rem; background:#fff3cd; color:#856404; padding:8px; border-radius:4px; margin-top:5px; border-left:3px solid var(--warning);"><strong>Justificación:</strong> ${item.justification}</div>
+        `;
+        box.appendChild(itemDiv);
+    });
+}
+
+function filterWrongQuestions() {
+    const query = document.getElementById('search-box').value.toLowerCase().trim();
+    if (query === "") {
+        renderWrongQuestionsList(wrongQuestionsHistoryList);
+        return;
+    }
+
+    let filtered = wrongQuestionsHistoryList.filter(function(item) {
+        return item.question.toLowerCase().includes(query) || 
+               item.justification.toLowerCase().includes(query) ||
+               item.correctAnswer.toLowerCase().includes(query);
+    });
+
+    renderWrongQuestionsList(filtered);
+}
+
+function backToSetup() {
+    document.getElementById('search-box').value = ""; 
+    document.getElementById('results-screen').classList.remove('active');
+    document.getElementById('setup-screen').classList.add('active');
+}
+
+// INYECCIÓN DINÁMICA DE ENLACES (Corrige los fallos de referencia de forma nativa)
+window.addEventListener('DOMContentLoaded', function() {
+    // Forzar la apertura del selector al pulsar en el recuadro punteado
+    document.getElementById('drop-file-zone').addEventListener('click', function() {
+        document.getElementById('file-input').click();
+    });
+
+    // Escucha del Pomodoro
+    document.getElementById('btn-toggle-pomo').addEventListener('click', togglePomodoro);
+    
+    // Escucha de la selección de archivos múltiples
+    document.getElementById('file-input').addEventListener('change', handleMultipleFiles);
+    
+    // Escuchas de los radios del examen
+    document.getElementById('radio-mode-general').addEventListener('change', toggleModeViews);
+    document.getElementById('radio-mode-selective').addEventListener('change', toggleModeViews);
+    
+    // Escucha para iniciar test
+    document.getElementById('generate-btn').addEventListener('click', buildCustomTest);
+    
+    // Escucha para avanzar en el test
+    document.getElementById('next-btn').addEventListener('click', handleNavigationButton);
+    
+    // Escucha de filtrado de fallos
+    document.getElementById('search-box').addEventListener('input', filterWrongQuestions);
+    
+    // Escucha para regresar a la pantalla inicial
+    document.getElementById('btn-back-setup').addEventListener('click', backToSetup);
+});
+</script>
+</body>
+</html>
