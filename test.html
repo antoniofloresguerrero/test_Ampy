@@ -1,3 +1,4 @@
+<!-- PARTE 1: ESTRUCTURA CORREGIDA Y DISEÑO CSS BLINDADO -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -14,7 +15,12 @@
         .active { display: block; }
         .form-group { margin-bottom: 25px; }
         label.section-title { display: block; font-weight: bold; margin-bottom: 12px; color: var(--primary); border-bottom: 2px solid #eef5fa; padding-bottom: 5px; }
-        .file-zone { border: 2px dashed var(--primary); padding: 35px 25px; text-align: center; border-radius: 8px; background: #fafcff; cursor: pointer; }
+        
+        /* ZONA DE CARGA CON CLICS DESBLOQUEADOS */
+        .file-zone { border: 2px dashed var(--primary); padding: 35px 25px; text-align: center; border-radius: 8px; background: #fafcff; cursor: pointer; position: relative; user-select: none; }
+        .file-zone:hover { background: #f0f6fb; }
+        .file-zone * { pointer-events: none; } 
+        
         .file-list { margin-top: 15px; border: 1px solid #ddd; padding: 12px; border-radius: 6px; background: #fff; max-height: 140px; overflow-y: auto; }
         .file-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; font-size: 0.9rem; align-items: center; }
         .remove-btn { color: var(--danger); cursor: pointer; font-weight: bold; }
@@ -50,7 +56,7 @@
     <h1>Oposiciones UMA</h1>
     <h2>Centro de Simulación Avanzada Estilo Meludus</h2>
 
-    <!-- SCREEN 1: SETUP -->
+    <!-- SCREEN 1: CONFIGURACIÓN INICIAL -->
     <div id="setup-screen" class="screen active">
         <div class="tools-grid">
             <div class="tool-card">
@@ -105,7 +111,7 @@
         <button id="generate-btn" class="btn" disabled>Carga material normativo para desbloquear...</button>
     </div>
 
-    <!-- SCREEN 2: INTERACTIVO -->
+    <!-- SCREEN 2: EXAMEN INTERACTIVO -->
     <div id="quiz-screen" class="screen">
         <div class="info-panel">
             <span id="question-number">Pregunta 1 de X</span>
@@ -118,7 +124,7 @@
         <button id="next-btn" class="btn" style="margin-top:20px;">Validar Respuesta</button>
     </div>
 
-    <!-- SCREEN 3: RESULTADOS -->
+    <!-- SCREEN 3: RESUMEN DE RESULTADOS -->
     <div id="results-screen" class="screen" style="text-align: center;">
         <h3>Análisis Métrico Oficial (Fórmula de Examen UMA)</h3>
         <hr>
@@ -126,11 +132,9 @@
             <tr><th>Criterio de Evaluación</th><th>Métrica Alcanzada</th></tr>
             <tr><td>Preguntas totalmente acertadas</td><td><span id="res-correct" class="correct">0</span></td></tr>
             <tr><td>Preguntas falladas / Incompletas</td><td><span id="res-incorrect" class="incorrect">0</span></td></tr>
-            <tr><td>Penalización aplicada (Resta 0.33 por fallo)</td><td><span id="res-penalty" class="incorrect">0.00 pts</span></td></tr>
-            <tr><td>Nota final ponderada (Base de 0 a 10)</td><td><span id="res-final-score" style="font-weight: bold; color:var(--primary);">0.00 / 10</span></td></tr>
-            <tr><td>Tiempo total empleado</td><td><span id="res-time" style="font-weight: bold;">00:00</span></td></tr>
-        </table>
-        // PARTE 2: HISTORIAL, POMODORO, CONTROL MULTI-ARCHIVO Y EXTRACTOR CONTEXTUAL
+
+            <script>
+ // PARTE 2: HISTORIAL, POMODORO, CONTROL MULTI-ARCHIVO Y EXTRACTOR CONTEXTUAL CORREGIDO
 let uploadedThemesMap = new Map();
 let currentTestQuestions = new Array();
 let currentIndex = 0;
@@ -241,7 +245,6 @@ function refreshSetupUI() {
         checksZone.appendChild(checkDiv);
     });
 
-    // Enlazar los botones de eliminar dinámicos creados
     document.querySelectorAll('.remove-btn').forEach(function(btn) {
         btn.onclick = function() {
             removeTheme(parseInt(this.getAttribute('data-id')));
@@ -267,7 +270,7 @@ function toggleModeViews() {
     document.getElementById('theme-selectors-group').style.display = isSelective ? "block" : "none";
 }
 
-// MOTOR DE EXTRACCIÓN CONTEXTUAL: Genera enunciados dinámicos reales basados en tu propio texto
+// MOTOR DE EXTRACCIÓN CONTEXTUAL CORREGIDO (Acceso seguro al índice del array de captura)
 function extractQuestionsFromText(text) {
     const cleanText = text.replace(/\s+/g, ' ');
     const sentences = cleanText.split(/[.?;:]+/).map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 50; });
@@ -287,9 +290,14 @@ function extractQuestionsFromText(text) {
         let subjectMatch = sentence.match(/(?:el|la|los|las)\s+([A-ZÁÉÍÓÚa-záéíóúñ]+\s+[a-záéíóúñ]+)/);
         
         if (articleMatch) {
-            coreConcept = `lo dispuesto en el ${articleMatch}`;
-        } else if (subjectMatch && subjectMatch && !/para|como|cuando/i.test(subjectMatch)) {
-            coreConcept = `la regulación de: "${subjectMatch.trim()}"`;
+            coreConcept = `lo dispuesto en el ${articleMatch[0]}`;
+        } else if (subjectMatch && subjectMatch[1]) {
+            let extractedSubject = subjectMatch[1].trim();
+            if (!/para|como|cuando/i.test(extractedSubject)) {
+                coreConcept = `la regulación de: "${extractedSubject}"`;
+            } else {
+                coreConcept = `el precepto legal extraído de sus apuntes`;
+            }
         } else {
             coreConcept = `el precepto legal extraído de sus apuntes`;
         }
@@ -303,7 +311,7 @@ function extractQuestionsFromText(text) {
             });
         } else if (/rector|consejo|claustro|gerente|órgano/i.test(sentence)) {
             let organFound = sentence.match(/rector|consejo de gobierno|claustro|gerente/i);
-            let specificOrgan = organFound ? organFound : "los órganos institucionales";
+            let specificOrgan = organFound ? organFound[0] : "los órganos institucionales";
             questionText = `Analice las funciones, composición o directrices descritas en relación con ${specificOrgan} y determine qué opción se ajusta con total exactitud a la norma:`;
             
             organFakes.forEach(function(organ) {
@@ -353,6 +361,7 @@ function extractQuestionsFromText(text) {
     }
     return dynamicBank;
 }
+
 // PARTE 3A: ALGORITMO DE MEZCLA, PROCESAMIENTO GENERAL Y CONTROL DE TIEMPO ESTRICTO
 function shuffleQuestion(q) {
     let indices = q.options.map(function(_, i) { return i; });
@@ -486,7 +495,7 @@ function handleTimeOut() {
     document.getElementById('justification-panel').style.display = "block";
     document.getElementById('next-btn').innerText = (currentIndex === currentTestQuestions.length - 1) ? "Finalizar Test" : "Siguiente Pregunta";
 }
-// PARTE 3B: RENDERIZADO, VALIDACIÓN EN VIVO, BUSCADOR DE ERRORES Y ENLACES AUTOMÁTICOS
+// PARTE 3B: RENDERIZADO, VALIDACIÓN EN VIVO, BUSCADOR DE ERRORES Y ENLACES AUTOMÁTICOS PROTEGIDOS
 function renderQuestion() {
     hasAnsweredCurrentQuestion = false;
     const q = currentTestQuestions[currentIndex];
@@ -669,34 +678,30 @@ function backToSetup() {
     document.getElementById('setup-screen').classList.add('active');
 }
 
-// INYECCIÓN DINÁMICA DE ENLACES (Corrige los fallos de referencia de forma nativa)
+// INYECCIÓN DINÁMICA DE ENLACES CORREGIDA (Sincronizada al 100% con los IDs de la Parte 1)
 window.addEventListener('DOMContentLoaded', function() {
-    // Forzar la apertura del selector al pulsar en el recuadro punteado
-    document.getElementById('drop-file-zone').addEventListener('click', function() {
-        document.getElementById('file-input').click();
-    });
+    const dropZone = document.getElementById('drop-file-zone');
+    const fileInput = document.getElementById('file-input');
+    const btnPomo = document.getElementById('btn-toggle-pomo');
+    const radioGen = document.getElementById('radio-mode-general');
+    const radioSel = document.getElementById('radio-mode-selective');
+    const btnGen = document.getElementById('generate-btn');
+    const btnNext = document.getElementById('next-btn');
+    const searchBox = document.getElementById('search-box');
+    const btnBack = document.getElementById('btn-back-setup');
 
-    // Escucha del Pomodoro
-    document.getElementById('btn-toggle-pomo').addEventListener('click', togglePomodoro);
-    
-    // Escucha de la selección de archivos múltiples
-    document.getElementById('file-input').addEventListener('change', handleMultipleFiles);
-    
-    // Escuchas de los radios del examen
-    document.getElementById('radio-mode-general').addEventListener('change', toggleModeViews);
-    document.getElementById('radio-mode-selective').addEventListener('change', toggleModeViews);
-    
-    // Escucha para iniciar test
-    document.getElementById('generate-btn').addEventListener('click', buildCustomTest);
-    
-    // Escucha para avanzar en el test
-    document.getElementById('next-btn').addEventListener('click', handleNavigationButton);
-    
-    // Escucha de filtrado de fallos
-    document.getElementById('search-box').addEventListener('input', filterWrongQuestions);
-    
-    // Escucha para regresar a la pantalla inicial
-    document.getElementById('btn-back-setup').addEventListener('click', backToSetup);
+    // Comprobaciones de seguridad obligatorias antes de asignar escuchas
+    if (dropZone && fileInput) {
+        dropZone.addEventListener('click', function() { fileInput.click(); });
+    }
+    if (fileInput) fileInput.addEventListener('change', handleMultipleFiles);
+    if (btnPomo) btnPomo.addEventListener('click', togglePomodoro);
+    if (radioGen) radioGen.addEventListener('change', toggleModeViews);
+    if (radioSel) radioSel.addEventListener('change', toggleModeViews);
+    if (btnGen) btnGen.addEventListener('click', buildCustomTest);
+    if (btnNext) btnNext.addEventListener('click', handleNavigationButton);
+    if (searchBox) searchBox.addEventListener('input', filterWrongQuestions);
+    if (btnBack) btnBack.addEventListener('click', backToSetup);
 });
 </script>
 </body>
