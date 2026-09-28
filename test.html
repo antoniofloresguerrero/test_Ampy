@@ -93,7 +93,25 @@
             </div>
         </div>
 
-        <div class="form-group">
+        <!-- PASO NUEVO: MODALIDAD DE ENTRENAMIENTO EXCLUSIVA ESTILO MELUDUS -->
+<div class="form-group" style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
+    <label class="section-title" style="margin-bottom: 15px; font-size: 1.05rem;">🎯 Selecciona tu modalidad de entrenamiento:</label>
+    <div style="display: flex; gap: 30px; align-items: center;">
+        <label style="cursor: pointer; font-weight: 600; font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
+            <input type="radio" name="test-type-mode" value="normal" id="radio-type-normal" checked style="width: 18px; height: 18px; cursor: pointer;"> 
+            📁 Cargar Nuevos Temas (.txt)
+        </label>
+        <label style="cursor: pointer; font-weight: 600; font-size: 1.05rem; color: var(--danger); display: flex; align-items: center; gap: 8px;">
+            <input type="radio" name="test-type-mode" value="failures" id="radio-type-failures" style="width: 18px; height: 18px; cursor: pointer;"> 
+            🚨 Repasar Mis Errores (Sólo Fallos)
+        </label>
+    </div>
+    <!-- Alerta visual que indica cuántos fallos tienes acumulados en tiempo real -->
+    <div id="fail-mode-alert" class="fail-mode-alert" style="margin-top: 15px; background: #fff5f5; border: 1px solid #feb2b2; padding: 12px; border-radius: 6px; color: #c53030; font-size: 0.95rem; font-weight: 500; display: none;">
+        ⚠️ Modo Repaso Activo: Tienes <span id="fail-count-badge" style="font-weight: bold; background: #c53030; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.85rem; margin: 0 4px;">0</span> preguntas falladas en tu historial listas para ser repasadas.
+    </div>
+
+
             <label class="section-title">1. Carga los Temas de tu Oposición (.txt):</label>
             <div class="file-zone" id="drop-file-zone">
                 <p style="margin: 0; font-size: 1.1rem; color: #005a9c; font-weight: bold;">📁 Haz clic en este recuadro para abrir tus carpetas y elegir temas</p>
@@ -448,47 +466,91 @@ function shuffleQuestion(q) {
 }
 
 function buildCustomTest() {
-    const checkedMode = document.querySelector('input[name="exam-mode"]:checked');
-    const mode = checkedMode ? checkedMode.value : 'general';
-    const reqCount = parseInt(document.getElementById('num-questions').value);
+    // 1. Detectar el modo de examen seleccionado por el usuario
+    const radioFailures = document.getElementById('radio-type-failures');
+    const isFailMode = radioFailures && radioFailures.checked;
+    const reqCount = parseInt(document.getElementById('num-questions').value) || 5;
     
     let mixedPool = new Array();
 
-    // Procesar cada archivo de forma independiente para conservar su nombre de origen
-    if (mode === 'general') {
-        uploadedThemesMap.forEach(function(themeData) {
-            if (themeData.content && themeData.content.trim().length > 50) {
-                let fileQuestions = extractQuestionsFromText(themeData.content, themeData.name);
-                mixedPool = mixedPool.concat(fileQuestions);
-            }
-        });
-    } else {
-        const checkedBoxes = document.querySelectorAll('.theme-select-chk:checked');
-        if (checkedBoxes.length === 0) {
-            alert("Por favor, marca al menos uno de los temas para poder generar el test.");
+    if (isFailMode) {
+        // --- MODALIDAD SÓLO FALLOS ---
+        let savedData = localStorage.getItem('uma_saved_tests');
+        if (!savedData) {
+            alert("No hay ningún test guardado en el historial para extraer fallos.");
             return;
         }
-        checkedBoxes.forEach(function(chk) {
-            let id = parseInt(chk.value);
-            if (uploadedThemesMap.has(id)) {
-                let themeData = uploadedThemesMap.get(id);
+        
+        let testsArray = JSON.parse(savedData);
+        let uniqueFailuresMap = new Map(); // Evita preguntas de fallos duplicadas
+
+        // Recorrer todos los exámenes realizados históricamente
+        testsArray.forEach(function(test) {
+            if (test.questionsDetails && Array.isArray(test.questionsDetails)) {
+                test.questionsDetails.forEach(function(qDetail) {
+                    // Extraer únicamente las que fueron marcadas como incorrectas (isCorrect === false)
+                    if (qDetail.isCorrect === false || qDetail.userAnswer.includes("NO CONTESTADA")) {
+                        // Usamos el enunciado como clave única para no repetir el mismo fallo
+                        uniqueFailuresMap.set(qDetail.question, {
+                            question: qDetail.question,
+                            options: JSON.parse(JSON.stringify(qDetail.options)),
+                            // Reconstruimos el índice correcto localizando la solución exacta dentro de sus opciones
+                            answers: [qDetail.options.indexOf(qDetail.correctAnswer.split(" | ")[0]) >= 0 ? qDetail.options.indexOf(qDetail.correctAnswer.split(" | ")[0]) : 0],
+                            justification: qDetail.justification,
+                            fileName: qDetail.fileName || "Repaso Errores"
+                        });
+                    }
+                });
+            }
+        });
+
+        mixedPool = Array.from(uniqueFailuresMap.values());
+
+        if (mixedPool.length === 0) {
+            alert("¡Enhorabuena! No tienes ninguna pregunta fallada registrada en tu historial. Selecciona el Modo Normal.");
+            return;
+        }
+    } else {
+        // --- MODALIDAD NORMAL (CARGA DE TEXTOS .TXT) ---
+        const checkedMode = document.querySelector('input[name="exam-mode"]:checked');
+        const mode = checkedMode ? checkedMode.value : 'general';
+        
+        if (mode === 'general') {
+            uploadedThemesMap.forEach(function(themeData) {
                 if (themeData.content && themeData.content.trim().length > 50) {
                     let fileQuestions = extractQuestionsFromText(themeData.content, themeData.name);
                     mixedPool = mixedPool.concat(fileQuestions);
                 }
+            });
+        } else {
+            const checkedBoxes = document.querySelectorAll('.theme-select-chk:checked');
+            if (checkedBoxes.length === 0) {
+                alert("Por favor, marca al menos uno de los temas para poder generar el test.");
+                return;
             }
-        });
+            checkedBoxes.forEach(function(chk) {
+                let id = parseInt(chk.value);
+                if (uploadedThemesMap.has(id)) {
+                    let themeData = uploadedThemesMap.get(id);
+                    if (themeData.content && themeData.content.trim().length > 50) {
+                        let fileQuestions = extractQuestionsFromText(themeData.content, themeData.name);
+                        mixedPool = mixedPool.concat(fileQuestions);
+                    }
+                }
+            });
+        }
     }
 
     if (mixedPool.length === 0) {
-        alert("No se han podido estructurar preguntas con el contenido de los textos elegidos. Verifique que contengan texto suficiente.");
+        alert("No se han podido estructurar preguntas para esta simulación.");
         return;
     }
 
-    // Mezcla aleatoria pura sobre el banco unificado
+    // Mezcla aleatoria pura y recorte según el volumen solicitado
     mixedPool.sort(function() { return Math.random() - 0.5; });
     currentTestQuestions = mixedPool.slice(0, reqCount).map(function(q) { return shuffleQuestion(q); });
 
+    // Cambiar de pantalla e iniciar variables de la sesión interactiva
     document.getElementById('setup-screen').classList.remove('active');
     document.getElementById('quiz-screen').classList.add('active');
 
@@ -496,6 +558,7 @@ function buildCustomTest() {
     wrongQuestionsHistoryList = new Array();
     
     startTime = Date.now();
+    clearInterval(timerInterval);
     timerInterval = setInterval(updateGlobalTimer, 1000);
     
     renderQuestion();
@@ -945,9 +1008,90 @@ function resetQuizSessionCleanly() {
     
     loadAndRenderSavedTestsList();
 }
+// Función auxiliar que cuenta los fallos acumulados en el localStorage y actualiza la pantalla inicial
+function updateFailuresCountNotice() {
+    let savedData = localStorage.getItem('uma_saved_tests');
+    let totalFails = 0;
+    let uniqueFailuresSet = new Set();
+
+    if (savedData) {
+        let testsArray = JSON.parse(savedData);
+        testsArray.forEach(function(test) {
+            if (test.questionsDetails) {
+                test.questionsDetails.forEach(function(q) {
+                    if (q.isCorrect === false || q.userAnswer.includes("NO CONTESTADA")) {
+                        uniqueFailuresSet.add(q.question);
+                    }
+                });
+            }
+        });
+        totalFails = uniqueFailuresSet.size;
+    }
+
+    const badge = document.getElementById('fail-count-badge');
+    const notice = document.getElementById('fail-mode-alert');
+    const genBtn = document.getElementById('generate-btn');
+
+    if (badge) badge.innerText = totalFails;
+
+    // Escuchar qué modo está activo para desbloquear el botón de inicio
+    const radioFailures = document.getElementById('radio-type-failures');
+    if (radioFailures && radioFailures.checked) {
+        if (notice) notice.style.display = "block";
+        if (document.getElementById('upload-files-section')) document.getElementById('upload-files-section').style.display = "none";
+        
+        if (totalFails > 0) {
+            if (genBtn) {
+                genBtn.disabled = false;
+                genBtn.innerText = `Iniciar Repaso de Errores (${totalFails} disponibles)`;
+            }
+        } else {
+            if (genBtn) {
+                genBtn.disabled = true;
+                genBtn.innerText = "No tienes preguntas falladas acumuladas";
+            }
+        }
+    } else {
+        if (notice) notice.style.display = "none";
+        if (document.getElementById('upload-files-section')) document.getElementById('upload-files-section').style.display = "block";
+        
+        if (uploadedThemesMap.size === 0) {
+            if (genBtn) {
+                genBtn.disabled = true;
+                genBtn.innerText = "Carga material normativo para desbloquear...";
+            }
+        } else {
+            if (genBtn) {
+                genBtn.disabled = false;
+                genBtn.innerText = "Iniciar Simulación";
+            }
+        }
+    }
+}
+
+// Modificar los listeners dentro de tu DOMContentLoaded existente para enganchar los modos
+function toggleTypeModeViews() {
+    updateFailuresCountNotice();
+}
+
+
+
 
 window.addEventListener('DOMContentLoaded', function() {
+
     loadAndRenderSavedTestsList();
+
+    // (Añade esto dentro de tu window.addEventListener('DOMContentLoaded', function() { ... }))
+    const radioTypeNormal = document.getElementById('radio-type-normal');
+    const radioTypeFailures = document.getElementById('radio-type-failures');
+    
+    if (radioTypeNormal) radioTypeNormal.addEventListener('change', toggleTypeModeViews);
+    if (radioTypeFailures) radioTypeFailures.addEventListener('change', toggleTypeModeViews);
+    
+    // Forzar actualización al cargar la página por primera vez
+    updateFailuresCountNotice();
+
+
 
     const dropZone = document.getElementById('drop-file-zone');
     const fileInput = document.getElementById('file-input');
