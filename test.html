@@ -1,4 +1,4 @@
-<!-- PARTE 1A: ESTILOS CSS AVANZADOS Y CONTENEDOR DE DISEÑO -->
+<!-- PARTE 1A: INTERFAZ GENERAL, ESTILOS CSS Y SOPORTE DE EXAMEN COMPLETO -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -8,7 +8,7 @@
     <style>
         :root { --primary: #005a9c; --primary-hover: #004477; --success: #28a745; --danger: #dc3545; --warning: #ffc107; --bg: #f4f7f9; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .container { max-width: 900px; width: 100%; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 25px rgba(0,0,0,0.06); }
+        .container { max-width: 950px; width: 100%; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 25px rgba(0,0,0,0.06); }
         h1 { color: var(--primary); text-align: center; margin-bottom: 5px; }
         h2 { font-size: 1.1rem; color: #666; text-align: center; margin-top: 0; margin-bottom: 25px; }
         .screen { display: none; }
@@ -16,8 +16,7 @@
         .form-group { margin-bottom: 25px; }
         label.section-title { display: block; font-weight: bold; margin-bottom: 12px; color: var(--primary); border-bottom: 2px solid #eef5fa; padding-bottom: 5px; }
         
-        /* CUADRO DE CARGA BLINDADO CON MÁXIMA PRIORIDAD DE CLIC */
-        .file-zone { border: 2px dashed var(--primary); padding: 40px 20px; text-align: center; border-radius: 8px; background: #fafcff; cursor: pointer !important; position: relative; user-select: none; z-index: 999 !important; display: block; }
+        .file-zone { border: 2px dashed var(--primary); padding: 40px 20px; text-align: center; border-radius: 8px; background: #fafcff; cursor: pointer !important; position: relative; user-select: none; z-index: 10; display: block; }
         .file-zone:hover { background: #f0f6fb; border-color: var(--primary-hover); }
         .file-zone * { pointer-events: none !important; } 
         
@@ -42,7 +41,7 @@
         .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 15px; box-sizing: border-box; }
         
         .history-box { border: 1px solid #ddd; border-radius: 6px; background: #fafafa; padding: 15px; max-height: 255px; overflow-y: auto; text-align: left; }
-        .history-item { padding: 10px; border-bottom: 1px solid #eee; margin-bottom: 10px; background: #fff; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .history-item { padding: 15px; border: 1px solid #e2e8f0; margin-bottom: 15px; background: #fff; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         
         .btn { background-color: var(--primary); color: white; border: none; padding: 14px 25px; font-size: 1rem; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; }
         .btn:hover { background-color: var(--primary-hover); }
@@ -55,13 +54,27 @@
         .incorrect { color: var(--danger); font-weight: bold; }
         .action-buttons-box { display: flex; gap: 20px; margin-top: 25px; margin-bottom: 30px; justify-content: center; }
         .action-buttons-box .btn { flex: 1; max-width: 320px; }
+
+        .saved-tests-box { border: 1px solid #ddd; border-radius: 8px; background: #fdfdfd; padding: 15px; max-height: 250px; overflow-y: auto; margin-top: 10px; }
+        .saved-test-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; border-bottom: 1px solid #edf2f7; background: #fff; margin-bottom: 8px; border-radius: 5px; cursor: pointer; transition: background 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+        .saved-test-row:hover { background: #edf2f7; border-color: var(--primary); }
+        .badge-score { padding: 4px 8px; border-radius: 4px; font-weight: bold; color: white; font-size: 0.9rem; }
+        .badge-pass { background-color: var(--success); }
+        .badge-fail { background-color: var(--danger); }
+
+        /* Estilos específicos para las opciones revisadas en el historial */
+        .review-opt-list { list-style: none; padding: 0; margin: 10px 0; }
+        .review-opt-item { padding: 8px 12px; margin-bottom: 6px; border-radius: 4px; border: 1px solid #e2e8f0; background: #f8fafc; font-size: 0.95rem; }
+        .review-opt-correct { background-color: #d4edda !important; border-color: var(--success) !important; color: #155724; font-weight: bold; }
+        .review-opt-user-wrong { background-color: #f8d7da !important; border-color: var(--danger) !important; color: #721c24; }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>Oposiciones UMA</h1>
-   <!-- <h2>Centro de Simulación Avanzada Estilo Meludus</h2> -->
-    <!-- SCREEN 1: CONFIGURACIÓN INICIAL -->
+    <!--<h2>Centro de Simulación Avanzada Estilo Meludus</h2>-->
+
+    <!-- SCREEN 1: PANEL CENTRAL CON HISTORIAL -->
     <div id="setup-screen" class="screen active">
         <div class="tools-grid">
             <div class="tool-card">
@@ -103,6 +116,7 @@
             <label class="section-title">3. Configurar límite de tiempo por pregunta (Cronómetro Estricto):</label>
             <select id="time-limit-select">
                 <option value="0">Sin límite de tiempo (Modo Práctica)</option>
+                <option value="15">15 Segundos por pregunta (Rápido)</option>
                 <option value="30">30 Segundos por pregunta (Rápido)</option>
                 <option value="60" selected>60 Segundos por pregunta (Estándar Oposición)</option>
                 <option value="120">120 Segundos por pregunta (Supuestos extensos)</option>
@@ -114,6 +128,15 @@
             <input type="number" id="num-questions" min="1" value="5">
         </div>
         <button id="generate-btn" class="btn" disabled>Carga material normativo para desbloquear...</button>
+
+        <!-- REGISTRO ETERNO EN EL MENÚ PRINCIPAL -->
+        <div class="form-group" style="margin-top:35px;">
+            <label class="section-title" style="color:#2d3748; border-color:#e2e8f0;">📂 Historial de Exámenes Guardados Localmente:</label>
+            <div class="saved-tests-box" id="saved-tests-history-list">
+                <div style="text-align:center; color:#718096; padding:15px; font-style:italic;">No hay exámenes guardados todavía en este navegador.</div>
+            </div>
+            <button id="btn-clear-history" class="btn" style="background-color:#e53e3e; margin-top:10px; padding:8px; font-size:0.85rem; max-width:200px; display:none;">Borrar todo el historial</button>
+        </div>
     </div>
 
     <!-- SCREEN 2: EXAMEN INTERACTIVO -->
@@ -129,7 +152,7 @@
         <button id="next-btn" class="btn" style="margin-top:20px;">Validar Respuesta</button>
     </div>
 
-    <!-- SCREEN 3: RESULTADOS -->
+    <!-- SCREEN 3: RESULTADOS INMEDIATOS -->
     <div id="results-screen" class="screen">
         <h3>Análisis Métrico Oficial (Fórmula de Examen UMA)</h3>
         <hr>
@@ -164,23 +187,29 @@
             </tbody>
         </table>
         <br>
-        <label class="section-title">🔍 Buscador de Preguntas Falladas e Incompletas:</label>
-        <input type="text" id="search-box" class="search-input" placeholder="Escribe palabras clave para filtrar tus errores...">
+        <label class="section-title">🔍 Buscador Rápido de Errores Inmediatos:</label>
+        <input type="text" id="search-box" class="search-input" placeholder="Escribe palabras clave para filtrar tus errores de esta tanda...">
         <div id="wrong-questions-history" class="history-box"></div>
         
         <div class="action-buttons-box">
             <button id="btn-reload-app" class="btn" style="background-color: var(--success);">🔄 Cargar nuevos temas / Repetir</button>
-            <button id="btn-back-setup" class="btn" style="background-color: #6c757d;">Volver al Inicio</button>
+            <button id="btn-back-setup" class="btn" style="background-color: #6c757d;">Volver al Panel de Control</button>
         </div>
     </div>
+
+    <!-- SCREEN 4: PANTALLA RECONSTRUIDA DE REVISIÓN INTEGRAL DE TEST COMPLETO -->
+    <div id="review-screen" class="screen">
+        <h3 id="review-title-text" style="color:var(--primary);">Revisión Completa de Examen</h3>
+        <div class="info-panel" id="review-metrics-panel" style="background:#f7fafc; border:1px solid #e2e8f0; display:flex; gap:15px; font-size:0.9rem;"></div>
+        <label class="section-title">🔍 Buscador Histórico Integral (Filtra enunciados u opciones):</label>
+        <input type="text" id="review-search-box" class="search-input" placeholder="Busca palabras clave dentro de enunciados u opciones de este examen guardado...">
+        <div id="review-questions-box" class="history-box" style="max-height:410px;"></div>
+        <br>
+        <button id="btn-close-review" class="btn" style="background-color:#6c757d;">Cerrar Revisión Histórica</button>
+    </div>
 </div>
-
-
-
 <script>
-
-                
-// PARTE 2A: CONTROL DE HISTORIAL, POMODORO Y GESTOR MULTI-ARCHIVO (.TXT)
+// PARTE 2A: DECLARACIONES, POMODORO Y GESTIÓN DE ARCHIVOS CON CAPTURA DE NOMBRE DE ORIGEN
 let uploadedThemesMap = new Map();
 let currentTestQuestions = new Array();
 let currentIndex = 0;
@@ -188,13 +217,16 @@ let correctCount = 0;
 let incorrectCount = 0;
 let startTime, timerInterval;
 
-// Estados de control de examen y cronómetro estricto
+// Estados de control de examen, cronómetro estricto e historial permanente
 let hasAnsweredCurrentQuestion = false;
 let globalTestsCompleted = 0;
 let globalScoresSum = 0;
 let countdownSeconds = 60;
 let questionTimerInterval = null;
+
+// wrongQuestionsHistoryList guardará el histórico completo del test actual (todas las preguntas)
 let wrongQuestionsHistoryList = new Array();
+let activeReviewExamQuestions = new Array();
 
 // Temporizador Pomodoro de productividad integrado
 let pomoSeconds = 1500; 
@@ -224,7 +256,7 @@ function togglePomodoro() {
     }
 }
 
-// Carga multi-archivo con decodificación segura
+// Lector de archivos plano con decodificación e inyección del nombre del archivo de origen
 function handleMultipleFiles(event) {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -240,6 +272,7 @@ function handleMultipleFiles(event) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 let themeId = uploadedThemesMap.size + 1;
+                // Guardamos explícitamente el nombre limpio del archivo (ej: Constitución, Ley 39...)
                 uploadedThemesMap.set(themeId, {
                     name: file.name.replace('.txt', ''),
                     content: e.target.result
@@ -259,6 +292,7 @@ function refreshSetupUI() {
     const listContainer = document.getElementById('file-list-container');
     const checksZone = document.getElementById('theme-selectors-group');
     
+    if(!listContainer || !checksZone) return;
     listContainer.innerHTML = "";
     checksZone.innerHTML = "";
 
@@ -311,130 +345,84 @@ function removeTheme(id) {
 function toggleModeViews() {
     const checkedMode = document.querySelector('input[name="exam-mode"]:checked');
     const isSelective = checkedMode && checkedMode.value === 'selective';
-    document.getElementById('theme-selectors-group').style.display = isSelective ? "block" : "none";
+    const zone = document.getElementById('theme-selectors-group');
+    if(zone) zone.style.display = isSelective ? "block" : "none";
 }
-// PARTE 2B: MOTOR DE MATRIZ INTERROGATIVA DINÁMICA (ENUNCIADOS TOTALMENTE VARIABLES)
-function extractQuestionsFromText(text) {
+
+// PARTE 2B: MOTOR ALEATORIO AVANZADO CON ASOCIACIÓN DE ARCHIVO ORIGEN SEGURO
+function extractQuestionsFromText(text, sourceName) {
     const cleanText = text.replace(/\s+/g, ' ');
-    // Separamos estrictamente por puntos para aislar las disposiciones reales del temario
-    const sentences = cleanText.split(/[.]+/).map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 45; });
+    const sentences = cleanText.split(/[.]+/).map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 50; });
     let dynamicBank = new Array();
 
+    const masterSentencesPool = JSON.parse(JSON.stringify(sentences));
     const timeFakes = ["10 días naturales", "15 días hábiles", "1 mes", "3 meses", "6 meses"];
     const organFakes = ["el Rector", "el Consejo de Gobierno", "el Claustro Universitario", "el Consejo Social", "el Gerente"];
 
     sentences.forEach(function(sentence, sIdx) {
         let questionText = "";
         let finalOptions = new Array();
-        finalOptions.push(sentence); // La opción correcta siempre es la frase literal de tus apuntes
+        finalOptions.push(sentence); 
         
         let answers = new Array();
         answers.push(0);
 
-        // Extraer el texto literal del artículo de forma segura evitando errores de objeto
+        // CORRECCIÓN CLAVE: Extraemos el texto literal del índice [0] de forma segura antes de pasarlo a minúsculas
         let artMatch = sentence.match(/(articulo\s+\d+|art\.\s*\d+|titulo\s+[ivxlcd]+)/i);
         let prefix = artMatch ? `Conforme al ${artMatch[0].toLowerCase()}, ` : "";
 
-        // Auxiliar interno para evitar meter opciones repetidas (evita el error Marcaste = Solución)
+        let cleanSentence = sentence.replace(/(articulo\s+\d+|art\.\s*\d+|titulo\s+[ivxlcd]+)/i, "").trim();
+        let words = cleanSentence.split(" ");
+        let rawSegment = words.slice(0, Math.min(words.length, 5)).join(" ");
+        let textSegment = rawSegment.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "").trim();
+
+        let randomStyle = (sIdx + words.length) % 6;
+        
+        if (randomStyle === 0) {
+            questionText = `¿Qué directriz o mandato legal se establece textualmente en el temario respecto a: "${textSegment}..."?`;
+        } else if (randomStyle === 1) {
+            questionText = `De acuerdo con la literalidad del texto normativo cargado, ¿como se regula el precepto relativo a: "${textSegment}..."?`;
+        } else if (randomStyle === 2) {
+            questionText = `Analizando las disposiciones e imperativos de tus apuntes, ¿cuál de las siguientes opciones transcribe con total exactitud jurídica lo dispuesto sobre: "${textSegment}..."?`;
+        } else if (randomStyle === 3) {
+            questionText = `¿Qué obligación, competencia o término formal se dispone explícitamente en relación con la materia de: "${textSegment}..."?`;
+        } else if (randomStyle === 4) {
+            questionText = `Examinando los requisitos técnicos descritos en el material, ¿qué afirmación se ajusta fielmente y sin alteraciones al redactado de: "${textSegment}..."?`;
+        } else {
+            questionText = `¿Bajo qué condiciones o marco normativo se rige el precepto articulado correspondiente a: "${textSegment}..."?`;
+        }
+
         function safeAddFake(fakeString) {
             let cleanFake = fakeString.trim();
             let isDuplicate = finalOptions.some(function(existingOpt) {
                 return existingOpt.toLowerCase().trim() === cleanFake.toLowerCase();
             });
-            if (!isDuplicate && cleanFake.length > 10 && finalOptions.length < 4) {
+            if (!isDuplicate && cleanFake.length > 20 && finalOptions.length < 4) {
                 finalOptions.push(cleanFake);
             }
         }
 
-        // 1. DISPARADORES DE EXAMEN TOTALMENTE VARIABLES SEGÚN NEXOS GRAMATICALES
-        
-        // A) Estructuras de competencias de órganos ("Corresponde a...")
-        if (/corresponde\s+(?:al|a\s+la|a\s+los|a\s+las)\s+([^,.:;]+)\s+(?:la|el|los|las|funciones|competencias)\s+([^,.:;]+)/i.test(sentence)) {
-            let match = sentence.match(/corresponde\s+(?:al|a\s+la|a\s+los|a\s+las)\s+([^,.:;]+)\s+(?:la|el|los|las|funciones|competencias)\s+([^,.:;]+)/i);
-            let accion = match ? match[2] : "";
-            if (accion.length > 5) {
-                // Alternamos los pronombres interrogativos para que no se repitan
-                let alt = sIdx % 3;
-                if (alt === 0) questionText = `${prefix}¿A qué órgano de la Universidad le compete la función de ${accion.trim()}?`;
-                else if (alt === 1) questionText = `${prefix}¿Sobre quién recae la atribución expresa de proceder a la ${accion.trim()}?`;
-                else questionText = `${prefix}¿A quién se le encomienda legalmente la tarea de ${accion.trim()}?`;
-
-                organFakes.forEach(function(organ) {
-                    let fakeSentence = sentence.replace(/rector|consejo de gobierno|claustro|gerente|consejo social/gi, organ);
-                    safeAddFake(fakeSentence);
-                });
+        let poolIndices = masterSentencesPool.map(function(_, i) { return i; }).sort(function() { return Math.random() - 0.5; });
+        for (let i = 0; i < poolIndices.length; i++) {
+            let potentialFakeIdx = poolIndices[i];
+            if (potentialFakeIdx !== sIdx) {
+                safeAddFake(masterSentencesPool[potentialFakeIdx]);
             }
-        } 
-        
-        // B) Estructuras de plazos numéricos y temporales ("Días", "Meses"...)
-        else if (/días|dias|mes|meses|año|años|\b\d+\b/i.test(sentence)) {
-            let cleanSentence = sentence.replace(/(articulo\s+\d+|art\.\s*\d+|titulo\s+[ivxlcd]+)/i, "").trim();
-            let segments = cleanSentence.split(/días|dias|meses|mes|años|año/i);
-            let context = segments ? segments[0] : "";
-            
-            if (context.length > 10) {
-                let shortContext = context.split(" ").slice(-4).join(" ").replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
-                
-                // Variación aleatoria de la pregunta del plazo
-                let alt = sIdx % 3;
-                if (alt === 0) questionText = `${prefix}¿De cuánto es el plazo temporal estipulado respecto a: "... ${shortContext.trim()}"?`;
-                else if (alt === 1) questionText = `${prefix}¿Cada cuánto tiempo o en qué término se debe proceder para: "... ${shortContext.trim()}"?`;
-                else questionText = `${prefix}¿Dentro de qué margen numérico o temporal se computará la acción de: "... ${shortContext.trim()}"?`;
-                
-                timeFakes.forEach(function(fake) {
-                    let fakeSentence = sentence.replace(/(\b\d+\b\s+(días|dias|meses|años|mes|año)\s*(naturales|hábiles)?)/gi, fake);
-                    safeAddFake(fakeSentence);
-                });
-            }
+            if (finalOptions.length === 4) break;
         }
 
-        // C) Estructuras de obligaciones directas ("Deberá", "Aprobará", "Estará constituido")
-        else if (/rector|consejo|claustro|gerente/i.test(sentence)) {
-            let organFound = sentence.match(/rector|consejo de gobierno|claustro|gerente/i);
-            let words = sentence.split(" ");
-            let segment = words.slice(0, 4).join(" ").replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
-            
-            // Variación de pronombres para órganos
-            let alt = sIdx % 3;
-            if (alt === 0) questionText = `${prefix}¿Qué competencia o mandato legal se ejerce sobre ${organFound} respecto a "${segment.trim()}..."?`;
-            else if (alt === 1) questionText = `${prefix}¿De qué manera o bajo qué directriz actuará ${organFound} en relación con "${segment.trim()}..."?`;
-            else questionText = `${prefix}¿Bajo qué directriz jurídica se rige ${organFound} al tratar la materia de "${segment.trim()}..."?`;
-            
-            organFakes.forEach(function(organ) {
-                let fakeSentence = sentence.replace(/rector|consejo de gobierno|claustro|gerente|consejo social/gi, organ);
-                safeAddFake(fakeSentence);
-            });
-        }
-
-        // D) COMODÍN DE EXAMEN GENERAL CON APERTURAS VARIABLES (Si la frase es abstracta)
-        if (!questionText) {
-            let words = sentence.split(" ");
-            let textSegment = words.slice(0, 4).join(" ").replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
-            
-            let alt = sIdx % 4;
-            if (alt === 0) questionText = `¿Qué precepto o directriz textual recoge la normativa vigente sobre "${textSegment.trim()}..."?`;
-            else if (alt === 1) questionText = `¿De qué manera se regula literalmente en los apuntes el concepto de "${textSegment.trim()}..."?`;
-            else if (alt === 2) questionText = `¿Mediante qué criterios técnicos se dispone la aplicación de "${textSegment.trim()}..."?`;
-            else questionText = `¿Cómo se estipula normativamente el redactado correspondiente a "${textSegment.trim()}..."?`;
-            
+        if (finalOptions.length < 4) {
             safeAddFake(sentence.replace(/será|deberá|corresponde|puede/gi, "quedará completamente suspendido de forma provisional"));
-            safeAddFake(sentence.replace(/siempre|en\s+todo\s+caso/gi, "únicamente cuando exista una resolución rectoral extraordinaria previa"));
+            safeAddFake(sentence.replace(/siempre|en\s+todo\s+caso/gi, "únicamente bajo resolución rectoral extraordinaria previa"));
         }
 
-        // CONTROL FINAL DE DISTRACTORES
-        if (questionText) {
-            if (finalOptions.length < 4 && sentences[sIdx + 1]) safeAddFake(sentences[sIdx + 1]);
-            if (finalOptions.length < 4 && sentences[sIdx - 1]) safeAddFake(sentences[sIdx - 1]);
-            
-            while (finalOptions.length < 4) {
-                finalOptions.push("Ninguna de las opciones anteriores se corresponde con el redactado literal de la ley subida.");
-            }
-            
+        if (questionText && finalOptions.length === 4) {
             dynamicBank.push({ 
                 question: questionText, 
                 options: finalOptions, 
                 answers: answers,
-                justification: sentence 
+                justification: sentence,
+                fileName: sourceName 
             });
         }
     });
@@ -443,7 +431,7 @@ function extractQuestionsFromText(text) {
 }
 
 
-// PARTE 3A: ALGORITMO DE MEZCLA, PROCESAMIENTO GENERAL Y CONTROL DE CUENTA ATRÁS ESTRICTA
+// PARTE 3A: ALGORITMO DE MEZCLA INTERNA, COPILACIÓN POR LEYES Y CRONÓMETRO ESTRICTO
 function shuffleQuestion(q) {
     let indices = q.options.map(function(_, i) { return i; });
     for (let i = indices.length - 1; i > 0; i--) {
@@ -464,11 +452,15 @@ function buildCustomTest() {
     const mode = checkedMode ? checkedMode.value : 'general';
     const reqCount = parseInt(document.getElementById('num-questions').value);
     
-    let activeContentText = "";
+    let mixedPool = new Array();
 
+    // Procesar cada archivo de forma independiente para conservar su nombre de origen
     if (mode === 'general') {
         uploadedThemesMap.forEach(function(themeData) {
-            activeContentText += " " + themeData.content;
+            if (themeData.content && themeData.content.trim().length > 50) {
+                let fileQuestions = extractQuestionsFromText(themeData.content, themeData.name);
+                mixedPool = mixedPool.concat(fileQuestions);
+            }
         });
     } else {
         const checkedBoxes = document.querySelectorAll('.theme-select-chk:checked');
@@ -479,25 +471,23 @@ function buildCustomTest() {
         checkedBoxes.forEach(function(chk) {
             let id = parseInt(chk.value);
             if (uploadedThemesMap.has(id)) {
-                activeContentText += " " + uploadedThemesMap.get(id).content;
+                let themeData = uploadedThemesMap.get(id);
+                if (themeData.content && themeData.content.trim().length > 50) {
+                    let fileQuestions = extractQuestionsFromText(themeData.content, themeData.name);
+                    mixedPool = mixedPool.concat(fileQuestions);
+                }
             }
         });
     }
 
-    if (!activeContentText || activeContentText.trim().length < 100) {
-        alert("El contenido de los temas seleccionados está vacío o es insuficiente.");
+    if (mixedPool.length === 0) {
+        alert("No se han podido estructurar preguntas con el contenido de los textos elegidos. Verifique que contengan texto suficiente.");
         return;
     }
 
-    let pool = extractQuestionsFromText(activeContentText);
-    
-    if (pool.length === 0) {
-        alert("No se han podido estructurar preguntas con el contenido de los textos elegidos.");
-        return;
-    }
-
-    pool.sort(function() { return Math.random() - 0.5; });
-    currentTestQuestions = pool.slice(0, reqCount).map(function(q) { return shuffleQuestion(q); });
+    // Mezcla aleatoria pura sobre el banco unificado
+    mixedPool.sort(function() { return Math.random() - 0.5; });
+    currentTestQuestions = mixedPool.slice(0, reqCount).map(function(q) { return shuffleQuestion(q); });
 
     document.getElementById('setup-screen').classList.remove('active');
     document.getElementById('quiz-screen').classList.add('active');
@@ -544,12 +534,13 @@ function updateCountdownUI() {
     let m = Math.floor(countdownSeconds / 60).toString().padStart(2, '0');
     let s = (countdownSeconds % 60).toString().padStart(2, '0');
     const timerSpan = document.getElementById('timer');
-    timerSpan.innerText = `Tiempo Restante: ${m}:${s}`;
-    
-    if (countdownSeconds <= 10) {
-        timerSpan.classList.add('timer-alert');
-    } else {
-        timerSpan.classList.remove('timer-alert');
+    if (timerSpan) {
+        timerSpan.innerText = `Tiempo Restante: ${m}:${s}`;
+        if (countdownSeconds <= 10) {
+            timerSpan.classList.add('timer-alert');
+        } else {
+            timerSpan.classList.remove('timer-alert');
+        }
     }
 }
 
@@ -562,21 +553,29 @@ function handleTimeOut() {
     
     wrongQuestionsHistoryList.push({
         question: q.question,
+        options: JSON.parse(JSON.stringify(q.options)),
         userAnswer: "NO CONTESTADA (Tiempo agotado)",
         correctAnswer: q.options[q.answers] || "Desconocida", 
-        justification: q.justification
+        justification: q.justification,
+        isCorrect: false,
+        fileName: q.fileName || "Temario General"
     });
 
     q.options.forEach(function(_, idx) {
         const li = document.getElementById(`opt-item-${idx}`);
-        if (q.answers.includes(idx)) li.classList.add('reveal-correct');
+        if (li && q.answers.includes(idx)) li.classList.add('reveal-correct');
     });
 
-    document.getElementById('justification-panel').innerHTML = `<strong>📖 Fundamentación Jurídica / Texto del BOE:</strong><br>${q.justification}`;
-    document.getElementById('justification-panel').style.display = "block";
+    const justPanel = document.getElementById('justification-panel');
+    if (justPanel) {
+        justPanel.innerHTML = `<strong>📖 Fundamentación Jurídica / Texto del BOE [${q.fileName}]:</strong><br>${q.justification}`;
+        justPanel.style.display = "block";
+    }
     document.getElementById('next-btn').innerText = (currentIndex === currentTestQuestions.length - 1) ? "Finalizar Test" : "Siguiente Pregunta";
 }
-// PARTE 3B-1: NÚCLEO DE CORRECCIÓN INTERACTIVA Y CÁLCULO DE RESULTADOS FÓRMULA UMA
+
+
+// PARTE 3B-1: RENDERIZADO INTERACTIVO, REVELACIÓN Y CAPTURA INTEGRAL CON ORIGEN DE ARCHIVO
 function renderQuestion() {
     hasAnsweredCurrentQuestion = false;
     const q = currentTestQuestions[currentIndex];
@@ -651,12 +650,15 @@ function processAndRevealAnswer() {
         incorrectCount++;
     }
 
+    // CAPTURA INTEGRAL CON PROCEDENCIA: Guardamos el archivo al que pertenece la pregunta
     wrongQuestionsHistoryList.push({
         question: q.question,
+        options: JSON.parse(JSON.stringify(q.options)),
         userAnswer: stringUserAnswers,
         correctAnswer: stringCorrectAnswers,
         justification: q.justification,
-        isCorrect: ok
+        isCorrect: ok,
+        fileName: q.fileName || "Temario General"
     });
 
     q.options.forEach(function(_, idx) {
@@ -664,15 +666,17 @@ function processAndRevealAnswer() {
         const isCorrect = q.answers.includes(idx);
         const isSelected = userSel.includes(idx);
 
-        li.classList.remove('selected');
-        if (isCorrect) {
-            li.classList.add('reveal-correct'); 
-        } else if (isSelected && !isCorrect) {
-            li.classList.add('reveal-incorrect'); 
+        if (li) {
+            li.classList.remove('selected');
+            if (isCorrect) {
+                li.classList.add('reveal-correct'); 
+            } else if (isSelected && !isCorrect) {
+                li.classList.add('reveal-incorrect'); 
+            }
         }
     });
 
-    document.getElementById('justification-panel').innerHTML = `<strong>📖 Fundamentación Jurídica / Texto del BOE:</strong><br>${q.justification}`;
+    document.getElementById('justification-panel').innerHTML = `<strong>📖 Fundamentación Jurídica / Texto del BOE [${q.fileName || "General"}]:</strong><br>${q.justification}`;
     document.getElementById('justification-panel').style.display = "block";
     document.getElementById('next-btn').innerText = (currentIndex === currentTestQuestions.length - 1) ? "Finalizar Test" : "Siguiente Pregunta";
 }
@@ -686,40 +690,7 @@ function advanceToNextQuestion() {
     }
 }
 
-function finalizeExam() {
-    clearInterval(timerInterval);
-    clearInterval(questionTimerInterval);
-    
-    document.getElementById('quiz-screen').classList.remove('active');
-    document.getElementById('results-screen').classList.add('active');
-
-    let penaltyValue = (wrongQuestionsHistoryList.filter(function(x){return !x.isCorrect;})).length * 0.333;
-    let rawScore = correctCount - penaltyValue;
-    if (rawScore < 0) rawScore = 0;
-    let finalWeightedScore = (rawScore / currentTestQuestions.length) * 10;
-
-    let finM = Math.floor(totalElapsedSeconds / 60).toString().padStart(2, '0');
-    let finS = (totalElapsedSeconds % 60).toString().padStart(2, '0');
-    let totalTimeStr = `${finM}:${finS}`;
-
-    document.getElementById('res-correct').innerText = correctCount;
-    document.getElementById('res-incorrect').innerText = currentTestQuestions.length - correctCount;
-    document.getElementById('res-penalty').innerText = `-${penaltyValue.toFixed(2)} pts`;
-    document.getElementById('res-final-score').innerText = `${finalWeightedScore.toFixed(2)} / 10`;
-    document.getElementById('res-time').innerText = totalTimeStr;
-
-    saveTestToLocalStorage(finalWeightedScore, totalTimeStr);
-
-    globalTestsCompleted++;
-    let accuracyPercent = (correctCount / currentTestQuestions.length) * 100;
-    globalScoresSum += accuracyPercent;
-    
-    if (document.getElementById('stat-tests-count')) document.getElementById('stat-tests-count').innerText = globalTestsCompleted;
-    if (document.getElementById('stat-avg-score')) document.getElementById('stat-avg-score').innerText = `${Math.round(globalScoresSum / globalTestsCompleted)}%`;
-
-    renderWrongQuestionsList((wrongQuestionsHistoryList.filter(function(x){return !x.isCorrect;})));
-}
-// PARTE 3B-2: HISTORIAL LOCALSTORAGE, REVISIÓN RETROSPECTIVA Y ESCUCHAS AUTOMÁTICAS CORREGIDAS
+// PARTE 3B-2: MAQUETACIÓN DE ERRORES, EVALUACIÓN OFICIAL UMA Y GUARDADO EN EL DISCO DURO CON LEYES
 function renderWrongQuestionsList(list) {
     const box = document.getElementById('wrong-questions-history');
     if (!box) return;
@@ -733,14 +704,69 @@ function renderWrongQuestionsList(list) {
     list.forEach(function(item) {
         let itemDiv = document.createElement('div');
         itemDiv.className = 'history-item';
+        
+        let optsHtml = '<ul class="review-opt-list">';
+        item.options.forEach(function(opt) {
+            let optClass = 'review-opt-item';
+            if (opt === item.correctAnswer) optClass += ' review-opt-correct';
+            else if (opt === item.userAnswer && opt !== item.correctAnswer) optClass += ' review-opt-user-wrong';
+            optsHtml += `<li class="${optClass}">${opt}</li>`;
+        });
+        optsHtml += '</ul>';
+
         itemDiv.innerHTML = `
+            <div style="font-size:0.85rem; color:var(--primary); font-weight:bold; margin-bottom:5px;">📋 Archivo: [${item.fileName}]</div>
             <div style="font-weight:bold; color:var(--primary); margin-bottom:5px;">❓ Enunciado: ${item.question}</div>
+            ${optsHtml}
             <div style="font-size:0.9rem; margin-bottom:3px;"><span style="color:var(--danger); font-weight:600;">Marcaste:</span> ${item.userAnswer}</div>
-            <div style="font-size:0.9rem; margin-bottom:5px;"><span style="color:var(--success); font-weight:600;">Solución exacta:</span> ${item.correctAnswer}</div>
             <div style="font-size:0.85rem; background:#fff3cd; color:#856404; padding:8px; border-radius:4px; margin-top:5px; border-left:3px solid var(--warning);"><strong>Justificación:</strong> ${item.justification}</div>
         `;
         box.appendChild(itemDiv);
     });
+}
+
+function finalizeExam() {
+    clearInterval(timerInterval);
+    clearInterval(questionTimerInterval);
+    
+    document.getElementById('quiz-screen').classList.remove('active');
+    document.getElementById('results-screen').classList.add('active');
+
+    let totalQuestions = currentTestQuestions.length;
+    let failedCount = totalQuestions - correctCount;
+    let penaltyValue = failedCount * 0.333;
+    let rawScore = correctCount - penaltyValue;
+    if (rawScore < 0) rawScore = 0;
+    let finalWeightedScore = (rawScore / totalQuestions) * 10;
+
+    let finM = Math.floor(totalElapsedSeconds / 60).toString().padStart(2, '0');
+    let finS = (totalElapsedSeconds % 60).toString().padStart(2, '0');
+    let totalTimeStr = `${finM}:${finS}`;
+
+    let elCorrect = document.getElementById('res-correct');
+    let elIncorrect = document.getElementById('res-incorrect');
+    let elPenalty = document.getElementById('res-penalty');
+    let elScore = document.getElementById('res-final-score');
+    let elTime = document.getElementById('res-time');
+
+    if (elCorrect) elCorrect.innerText = correctCount;
+    if (elIncorrect) elIncorrect.innerText = failedCount;
+    if (elPenalty) elPenalty.innerText = `-${penaltyValue.toFixed(2)} pts`;
+    if (elScore) elScore.innerText = `${finalWeightedScore.toFixed(2)} / 10`;
+    if (elTime) elTime.innerText = totalTimeStr;
+
+    saveTestToLocalStorage(finalWeightedScore, totalTimeStr);
+
+    globalTestsCompleted++;
+    globalScoresSum += (correctCount / totalQuestions) * 100;
+    
+    let elStatCount = document.getElementById('stat-tests-count');
+    let elStatAvg = document.getElementById('stat-avg-score');
+    
+    if (elStatCount) elStatCount.innerText = globalTestsCompleted;
+    if (elStatAvg) elStatAvg.innerText = `${Math.round(globalScoresSum / globalTestsCompleted)}%`;
+
+    renderWrongQuestionsList(wrongQuestionsHistoryList.filter(function(x){return !x.isCorrect;}));
 }
 
 function saveTestToLocalStorage(score, timeStr) {
@@ -750,6 +776,13 @@ function saveTestToLocalStorage(score, timeStr) {
     let dt = new Date();
     let dateStr = `${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}/${dt.getFullYear()} ${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}`;
 
+    // Obtener los nombres únicos de todos los archivos que componen este test para ponerlos en la cabecera
+    let uniqueFileNamesSet = new Set();
+    wrongQuestionsHistoryList.forEach(function(item) {
+        if (item.fileName) uniqueFileNamesSet.add(item.fileName);
+    });
+    let listLabelsStr = Array.from(uniqueFileNamesSet).join(", ");
+
     testsArray.push({
         date: dateStr,
         score: score.toFixed(2),
@@ -757,13 +790,14 @@ function saveTestToLocalStorage(score, timeStr) {
         totalQuestions: currentTestQuestions.length,
         correct: correctCount,
         incorrect: currentTestQuestions.length - correctCount,
-        questionsDetails: wrongQuestionsHistoryList
+        questionsDetails: wrongQuestionsHistoryList,
+        originLaws: listLabelsStr // Guardamos permanentemente las leyes involucradas en el test
     });
 
     localStorage.setItem('uma_saved_tests', JSON.stringify(testsArray));
     loadAndRenderSavedTestsList();
 }
-
+// PARTE 3B-3: RENDERIZADO DE LEYES EN HISTORIAL, REVISIÓN E INYECCIÓN DE EVENTOS FINAL
 function loadAndRenderSavedTestsList() {
     const box = document.getElementById('saved-tests-history-list');
     const clearBtn = document.getElementById('btn-clear-history');
@@ -784,19 +818,20 @@ function loadAndRenderSavedTestsList() {
         let test = testsArray[i];
         let isPassed = parseFloat(test.score) >= 5.0;
         let badgeClass = isPassed ? "badge-pass" : "badge-fail";
+        
+        // Recuperar la etiqueta de las leyes o poner una por defecto si es un registro antiguo
+        let lawsLabel = test.originLaws ? `📚 [${test.originLaws}]` : "📚 [Temario]";
 
         let row = document.createElement('div');
         row.className = "saved-test-row";
         row.innerHTML = `
             <div>
+                <div style="font-size:0.8rem; color:var(--primary); font-weight:bold; margin-bottom:2px;">${lawsLabel}</div>
                 <strong>📅 ${test.date}</strong> - ${test.totalQuestions} pregs. (${test.correct}A / ${test.incorrect}F) en ${test.time}
             </div>
             <div class="badge-score ${badgeClass}">${test.score} / 10</div>
         `;
-        
-        row.onclick = function() {
-            openReviewScreen(test);
-        };
+        row.onclick = function() { openReviewScreen(test); };
         box.appendChild(row);
     }
 }
@@ -805,7 +840,8 @@ function openReviewScreen(test) {
     document.getElementById('setup-screen').classList.remove('active');
     document.getElementById('review-screen').classList.add('active');
 
-    document.getElementById('review-title-text').innerText = `Revisión Histórica - Examen del ${test.date}`;
+    let lawsTitle = test.originLaws ? ` (${test.originLaws})` : "";
+    document.getElementById('review-title-text').innerText = `Revisión Histórica - Examen del ${test.date}${lawsTitle}`;
     document.getElementById('review-metrics-panel').innerHTML = `
         <span><strong>Nota:</strong> ${test.score} / 10</span>
         <span><strong>Aciertos:</strong> ${test.correct}</span>
@@ -813,7 +849,7 @@ function openReviewScreen(test) {
         <span><strong>Tiempo:</strong> ${test.time}</span>
     `;
 
-    activeReviewExamQuestions = test.questionsDetails;
+    activeReviewExamQuestions = test.questionsDetails || new Array();
     renderReviewQuestionsList(activeReviewExamQuestions);
 }
 
@@ -829,12 +865,29 @@ function renderReviewQuestionsList(list) {
             `<span style="color:var(--success); font-weight:bold;">✔️ ACERTADA</span>` : 
             `<span style="color:var(--danger); font-weight:bold;">❌ FALLADA / EN BLANCO</span>`;
 
+        let optsHtml = '';
+        if (item.options && Array.isArray(item.options)) {
+            optsHtml = '<ul class="review-opt-list">';
+            item.options.forEach(function(opt) {
+                let optClass = 'review-opt-item';
+                if (opt === item.correctAnswer) optClass += ' review-opt-correct';
+                else if (opt === item.userAnswer && opt !== item.correctAnswer) optClass += ' review-opt-user-wrong';
+                optsHtml += `<li class="${optClass}">${opt}</li>`;
+            });
+            optsHtml += '</ul>';
+        } else {
+            optsHtml = `<div style="font-size:0.9rem; color:#718096; font-style:italic; margin:5px 0;">Opciones no disponibles en este registro antiguo.</div>`;
+        }
+
+        let originFileTag = item.fileName ? `<div style="font-size:0.8rem; color:var(--primary); font-weight:bold; margin-bottom:5px;">📋 Ley de origen: [${item.fileName}]</div>` : '';
+
         itemDiv.innerHTML = `
             <div style="margin-bottom:5px;">${statusText}</div>
+            ${originFileTag}
             <div style="font-weight:bold; color:var(--primary); margin-bottom:5px;">❓ Enunciado: ${item.question}</div>
+            ${optsHtml}
             <div style="font-size:0.9rem; margin-bottom:3px;"><span style="color:var(--danger); font-weight:600;">Marcaste:</span> ${item.userAnswer}</div>
-            <div style="font-size:0.9rem; margin-bottom:5px;"><span style="color:var(--success); font-weight:600;">Solución exacta:</span> ${item.correctAnswer}</div>
-            <div style="font-size:0.85rem; background:#fff3cd; color:#856404; padding:8px; border-radius:4px; margin-top:5px; border-left:3px solid var(--warning);"><strong>Justificación del BOE:</strong> ${item.justification}</div>
+            <div style="font-size:0.85rem; background:#fff3cd; color:#856404; padding:8px; border-radius:4px; margin-top:5px; border-left:3px solid var(--warning);"><strong>Justificación:</strong> ${item.justification}</div>
         `;
         container.appendChild(itemDiv);
     });
@@ -876,7 +929,23 @@ function closeReview() {
     document.getElementById('setup-screen').classList.add('active');
 }
 
-// INYECCIÓN DINÁMICA DE ENLACES COMPLETA Y ASÍNCRONA
+function resetQuizSessionCleanly() {
+    currentTestQuestions = new Array();
+    currentIndex = 0;
+    correctCount = 0;
+    incorrectCount = 0;
+    hasAnsweredCurrentQuestion = false;
+    wrongQuestionsHistoryList = new Array();
+    
+    if (document.getElementById('search-box')) document.getElementById('search-box').value = "";
+    if (document.getElementById('review-search-box')) document.getElementById('review-search-box').value = "";
+    
+    document.getElementById('results-screen').classList.remove('active');
+    document.getElementById('setup-screen').classList.add('active');
+    
+    loadAndRenderSavedTestsList();
+}
+
 window.addEventListener('DOMContentLoaded', function() {
     loadAndRenderSavedTestsList();
 
@@ -903,13 +972,13 @@ window.addEventListener('DOMContentLoaded', function() {
     if (btnNext) btnNext.addEventListener('click', handleNavigationButton);
     if (searchBox) searchBox.addEventListener('input', filterWrongQuestions);
     if (btnBack) btnBack.addEventListener('click', backToSetup);
-    if (btnReload) btnReload.addEventListener('click', function() { location.reload(); });
+    if (btnReload) btnReload.addEventListener('click', resetQuizSessionCleanly);
     if (btnCloseRev) btnCloseRev.addEventListener('click', closeReview);
     if (revSearchBox) revSearchBox.addEventListener('input', filterReviewQuestions);
     
     if (btnClearHist) {
         btnClearHist.addEventListener('click', function() {
-            if(confirm("¿Estás seguro de que deseas eliminar permanentemente todos tus exámenes guardados?")) {
+            if(confirm("⚠️ ¿Estás completamente seguro de que deseas eliminar para siempre todo tu historial acumulado de exámenes?")) {
                 localStorage.removeItem('uma_saved_tests');
                 loadAndRenderSavedTestsList();
             }
@@ -919,3 +988,6 @@ window.addEventListener('DOMContentLoaded', function() {
 </script>
 </body>
 </html>
+
+
+
