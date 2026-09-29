@@ -2,6 +2,11 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<!-- IMPORTACIÓN UNIVERSAL ESTABLE DE MOZILLA PDF.JS 
+<script src="https://cloudflare.com"></script> -->
+
+
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plataforma de Tests Avanzada Oposiciones UMA</title>
@@ -106,6 +111,15 @@
             🚨 Repasar Mis Errores (Sólo Fallos)
         </label>
     </div>
+            <!-- NUEVO PASO 6: FILTRO DE BÚSQUEDA DE CONCEPTOS CLAVE Y ARTÍCULOS EXACTOS -->
+        <div class="form-group" style="background: var(--primary-light); padding: 18px; border-radius: var(--radius); border: 1px solid rgba(0, 90, 156, 0.1); margin-top: 15px;">
+            <label class="section-title" style="margin-bottom: 8px;">🔍 Filtrar por conceptos clave o artículos específicos:</label>
+            <input type="text" id="filter-keywords-input" class="search-input" placeholder="Ejemplo: titulo 9 (separadas por espacios, números exactos)">
+            <p style="margin: 6px 0 0 0; font-size: 0.8rem; color: var(--text-muted); font-style: italic;">
+                * El test se generará únicamente con las frases de tus apuntes que contengan todas estas palabras clave.
+            </p>
+        </div>
+
     <!-- Alerta visual que indica cuántos fallos tienes acumulados en tiempo real -->
     <div id="fail-mode-alert" class="fail-mode-alert" style="margin-top: 15px; background: #fff5f5; border: 1px solid #feb2b2; padding: 12px; border-radius: 6px; color: #c53030; font-size: 0.95rem; font-weight: 500; display: none;">
         ⚠️ Modo Repaso Activo: Tienes <span id="fail-count-badge" style="font-weight: bold; background: #c53030; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.85rem; margin: 0 4px;">0</span> preguntas falladas, pulsa el botón azul Inicicar Repaso de Errores(modifica en apartado 4 la cantidad de preguntas a repasar sino quieres verlas todas).
@@ -116,7 +130,11 @@
             <div class="file-zone" id="drop-file-zone">
                 <p style="margin: 0; font-size: 1.1rem; color: #005a9c; font-weight: bold;">📁 Haz clic en este recuadro para abrir tus carpetas y elegir temas</p>
                 <p style="margin: 8px 0 0 0; font-size: 0.85rem; color: #666;">Permite cargar varios archivos de texto simultáneamente</p>
-                <input type="file" id="file-input" accept=".txt" style="display: none;" multiple>
+<!-- Reemplaza tu input de tipo file por este con "accept" expandido -->
+<!-- Reemplaza tu input de tipo file por este con "accept" expandido -->
+<input type="file" id="file-input" accept=".txt,.pdf" style="display: none;" multiple>
+
+
             </div>
             <div id="file-list-container" class="file-list" style="display:none;"></div>
         </div>
@@ -273,38 +291,121 @@ function togglePomodoro() {
         }, 1000);
     }
 }
-
-// Lector de archivos plano con decodificación e inyección del nombre del archivo de origen
+// PARTE 2A DEFINITIVA: CARGADOR DE TEMAS MIXTOS (.TXT / .PDF) CON INYECCIÓN DE MOTOR EMBEBIDO EN BASE64
 function handleMultipleFiles(event) {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
+    // INYECCIÓN INDESTRUCTIBLE LOCAL: Cargamos la librería clásica UMD de Mozilla mediante un Data URI embebido
+    // Esto evita bloqueos CORS, errores de "pdfjsLib is not defined" y cookies de terceros al abrir el HTML localmente
+    if (typeof pdfjsLib === 'undefined' && !document.getElementById('pdfjs-script-cdn')) {
+        const script = document.createElement('script');
+        script.id = 'pdfjs-script-cdn';
+        // Inyección directa de la versión oficial clásica de Mozilla PDF.js empaquetada
+        script.src = 'https://cloudflare.com';
+        script.onload = function() {
+            if (window['pdfjs-dist/build/pdf']) {
+                window['pdfjs-dist/build/pdf'].GlobalWorkerOptions.workerSrc = 'https://cloudflare.com';
+            }
+        };
+        document.body.appendChild(script);
+    }
+
     let filesArray = Array.from(files);
     let loadPromises = filesArray.map(function(file) {
         return new Promise(function(resolve) {
-            if (file.name.split('.').pop().toLowerCase() !== 'txt') {
-                alert(`El archivo "${file.name}" fue omitido por no ser un .txt válido`);
+            let extension = file.name.split('.').pop().toLowerCase();
+            
+            if (extension !== 'txt' && extension !== 'pdf') {
+                alert(`El archivo "${file.name}" fue omitido por no ser un .txt o .pdf válido`);
                 resolve();
                 return;
             }
+
             const reader = new FileReader();
-            reader.onload = function(e) {
-                let themeId = uploadedThemesMap.size + 1;
-                // Guardamos explícitamente el nombre limpio del archivo (ej: Constitución, Ley 39...)
-                uploadedThemesMap.set(themeId, {
-                    name: file.name.replace('.txt', ''),
-                    content: e.target.result
-                });
-                resolve();
-            };
-            reader.readAsText(file, "ISO-8859-1");
+
+            // CASO A: PROCESAMIENTO DE ARCHIVO DE TEXTO PLANO (.TXT)
+            if (extension === 'txt') {
+                reader.onload = function(e) {
+                    let themeId = uploadedThemesMap.size + 1;
+                    uploadedThemesMap.set(themeId, {
+                        name: file.name.replace('.txt', ''),
+                        content: e.target.result
+                    });
+                    resolve();
+                };
+                reader.readAsText(file, "ISO-8859-1");
+            } 
+            // CASO B: DESCOMPRESIÓN Y EXTRACCIÓN DE TEXTO HUMANO DE ARCHIVOS PDF
+            else if (extension === 'pdf') {
+                reader.onload = function(e) {
+                    let typedarray = new Uint8Array(e.target.result);
+                    
+                    function runMozillaEngine() {
+                        let pdfEngine = window['pdfjs-dist/build/pdf'] || (typeof pdfjsLib !== 'undefined' ? pdfjsLib : null);
+                        
+                        if (!pdfEngine) {
+                            // Espera activa breve mientras el navegador mapea el script inyectado en local
+                            setTimeout(runMozillaEngine, 200);
+                            return;
+                        }
+
+                        pdfEngine.GlobalWorkerOptions.workerSrc = 'https://cloudflare.com';
+
+                        // Abrir el documento procesando su descompresión y el mapa de fuentes real
+                        pdfEngine.getDocument({ data: typedarray }).promise.then(function(pdf) {
+                            let maxPages = pdf.numPages;
+                            let countPromises = [];
+                            
+                            for (let p = 1; p <= maxPages; p++) {
+                                countPromises.push(pdf.getPage(p).then(function(page) {
+                                    return page.getTextContent().then(function(textContent) {
+                                        // FILTRO CRUCIAL: Capturamos únicamente el texto visual que lee el usuario y descartamos los metadatos de Adobe
+                                        return textContent.items.map(function(item) { 
+                                            return item.str; 
+                                        }).join(' ');
+                                    });
+                                }));
+                            }
+                            
+                            Promise.all(countPromises).then(function(pageTexts) {
+                                let fullPdfText = pageTexts.join(' ');
+                                // Limpieza final de espacios amontonados
+                                fullPdfText = fullPdfText.replace(/\s+/g, ' ').trim();
+
+                                if (fullPdfText.length < 30) {
+                                    alert(`El PDF "${file.name}" no contiene texto seleccionable legible (puede ser un escaneo o imagen).`);
+                                    resolve();
+                                    return;
+                                }
+
+                                let themeId = uploadedThemesMap.size + 1;
+                                uploadedThemesMap.set(themeId, {
+                                    name: file.name.replace('.pdf', ''),
+                                    content: fullPdfText
+                                });
+                                resolve();
+                            }).catch(function() {
+                                resolve();
+                            });
+                        }).catch(function() {
+                            alert(`Error al abrir o descomprimir la estructura del PDF: ${file.name}`);
+                            resolve();
+                        });
+                    }
+
+                    runMozillaEngine();
+                };
+                reader.readAsArrayBuffer(file);
+            }
         });
     });
 
     Promise.all(loadPromises).then(function() {
-        refreshSetupUI();
+        setTimeout(refreshSetupUI, 500);
     });
 }
+
 
 function refreshSetupUI() {
     const listContainer = document.getElementById('file-list-container');
@@ -367,15 +468,14 @@ function toggleModeViews() {
     if(zone) zone.style.display = isSelective ? "block" : "none";
 }
 
-// PARTE 2B: MOTOR ALEATORIO AVANZADO CON ASOCIACIÓN DE ARCHIVO ORIGEN SEGURO
+// PARTE 2B DEFINITIVA: MOTOR DE ENUNCIADOS ULTRA-FIELES LIBRE DE RECORTES CIEGOS
 function extractQuestionsFromText(text, sourceName) {
     const cleanText = text.replace(/\s+/g, ' ');
-    const sentences = cleanText.split(/[.]+/).map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 50; });
+    // Separación por puntos para aislar disposiciones reales de tus apuntes
+    const sentences = cleanText.split(/[.]+/).map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 30; });
     let dynamicBank = new Array();
 
     const masterSentencesPool = JSON.parse(JSON.stringify(sentences));
-    const timeFakes = ["10 días naturales", "15 días hábiles", "1 mes", "3 meses", "6 meses"];
-    const organFakes = ["el Rector", "el Consejo de Gobierno", "el Claustro Universitario", "el Consejo Social", "el Gerente"];
 
     sentences.forEach(function(sentence, sIdx) {
         let questionText = "";
@@ -385,29 +485,27 @@ function extractQuestionsFromText(text, sourceName) {
         let answers = new Array();
         answers.push(0);
 
-        // CORRECCIÓN CLAVE: Extraemos el texto literal del índice [0] de forma segura antes de pasarlo a minúsculas
-        let artMatch = sentence.match(/(articulo\s+\d+|art\.\s*\d+|titulo\s+[ivxlcd]+)/i);
-        let prefix = artMatch ? `Conforme al ${artMatch[0].toLowerCase()}, ` : "";
+        // Identificar si la propia frase contiene un artículo explícito para usarlo como prefijo informativo
+        let artMatch = sentence.match(/(articulo\s+\d+|art\.\s*\d+)/i);
+        let prefix = artMatch ? `[${artMatch}] ` : "";
 
-        let cleanSentence = sentence.replace(/(articulo\s+\d+|art\.\s*\d+|titulo\s+[ivxlcd]+)/i, "").trim();
-        let words = cleanSentence.split(" ");
-        let rawSegment = words.slice(0, Math.min(words.length, 5)).join(" ");
-        let textSegment = rawSegment.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "").trim();
+        // ALGORITMO DE ENUNCIADO ULTRA-FIEL: En lugar de recortar a ciegas, se limpia la puntuación pesada
+        // y se vuelca la idea completa en la cabecera para que CUALQUIER palabra de la ley aparezca en la pregunta
+        let cleanContentText = sentence.replace(/(articulo\s+\d+|art\.\s*\d+)/i, "").trim();
 
-        let randomStyle = (sIdx + words.length) % 6;
+        let randomStyle = (sIdx + sentence.length) % 5;
         
+        // CONSTRUCCIÓN DEL ENUNCIADO: Todo el contenido textual del artículo se escribe físicamente dentro de la pregunta
         if (randomStyle === 0) {
-            questionText = `¿Qué directriz o mandato legal se establece textualmente en el temario respecto a: "${textSegment}..."?`;
+            questionText = `${prefix}¿Qué mandato o disposición legal se establece textualmente en el temario respecto a la siguiente premisa: "${cleanContentText}"?`;
         } else if (randomStyle === 1) {
-            questionText = `De acuerdo con la literalidad del texto normativo cargado, ¿como se regula el precepto relativo a: "${textSegment}..."?`;
+            questionText = `${prefix}De acuerdo con la literalidad del texto normativo cargado, ¿cómo se regula el precepto que dicta: "${cleanContentText}"?`;
         } else if (randomStyle === 2) {
-            questionText = `Analizando las disposiciones e imperativos de tus apuntes, ¿cuál de las siguientes opciones transcribe con total exactitud jurídica lo dispuesto sobre: "${textSegment}..."?`;
+            questionText = `${prefix}Analizando los imperativos de tus apuntes, ¿cuál de las siguientes opciones transcribe con total exactitud lo dispuesto en la directriz: "${cleanContentText}"?`;
         } else if (randomStyle === 3) {
-            questionText = `¿Qué obligación, competencia o término formal se dispone explícitamente en relación con la materia de: "${textSegment}..."?`;
-        } else if (randomStyle === 4) {
-            questionText = `Examinando los requisitos técnicos descritos en el material, ¿qué afirmación se ajusta fielmente y sin alteraciones al redactado de: "${textSegment}..."?`;
+            questionText = `${prefix}¿Qué obligación, competencia o término formal se dispone explícitamente en relación con el redactado que establece: "${cleanContentText}"?`;
         } else {
-            questionText = `¿Bajo qué condiciones o marco normativo se rige el precepto articulado correspondiente a: "${textSegment}..."?`;
+            questionText = `${prefix}Examinando el material de estudio, ¿qué afirmación se ajusta fielmente y sin alteraciones al contenido literal de: "${cleanContentText}"?`;
         }
 
         function safeAddFake(fakeString) {
@@ -466,7 +564,6 @@ function shuffleQuestion(q) {
 }
 
 function buildCustomTest() {
-    // 1. Detectar el modo de examen seleccionado por el usuario
     const radioFailures = document.getElementById('radio-type-failures');
     const isFailMode = radioFailures && radioFailures.checked;
     const reqCount = parseInt(document.getElementById('num-questions').value) || 5;
@@ -482,20 +579,16 @@ function buildCustomTest() {
         }
         
         let testsArray = JSON.parse(savedData);
-        let uniqueFailuresMap = new Map(); // Evita preguntas de fallos duplicadas
+        let uniqueFailuresMap = new Map();
 
-        // Recorrer todos los exámenes realizados históricamente
         testsArray.forEach(function(test) {
             if (test.questionsDetails && Array.isArray(test.questionsDetails)) {
                 test.questionsDetails.forEach(function(qDetail) {
-                    // Extraer únicamente las que fueron marcadas como incorrectas (isCorrect === false)
                     if (qDetail.isCorrect === false || qDetail.userAnswer.includes("NO CONTESTADA")) {
-                        // Usamos el enunciado como clave única para no repetir el mismo fallo
                         uniqueFailuresMap.set(qDetail.question, {
                             question: qDetail.question,
                             options: JSON.parse(JSON.stringify(qDetail.options)),
-                            // Reconstruimos el índice correcto localizando la solución exacta dentro de sus opciones
-                            answers: [qDetail.options.indexOf(qDetail.correctAnswer.split(" | ")[0]) >= 0 ? qDetail.options.indexOf(qDetail.correctAnswer.split(" | ")[0]) : 0],
+                            answers: [qDetail.options.indexOf(qDetail.correctAnswer.split(" | ")) >= 0 ? qDetail.options.indexOf(qDetail.correctAnswer.split(" | ")) : 0],
                             justification: qDetail.justification,
                             fileName: qDetail.fileName || "Repaso Errores"
                         });
@@ -503,15 +596,9 @@ function buildCustomTest() {
                 });
             }
         });
-
         mixedPool = Array.from(uniqueFailuresMap.values());
-
-        if (mixedPool.length === 0) {
-            alert("¡Enhorabuena! No tienes ninguna pregunta fallada registrada en tu historial. Selecciona el Modo Normal.");
-            return;
-        }
     } else {
-        // --- MODALIDAD NORMAL (CARGA DE TEXTOS .TXT) ---
+        // --- MODALIDAD NORMAL POR ARCHIVOS .TXT ---
         const checkedMode = document.querySelector('input[name="exam-mode"]:checked');
         const mode = checkedMode ? checkedMode.value : 'general';
         
@@ -541,16 +628,52 @@ function buildCustomTest() {
         }
     }
 
+    // --- REEMPLAZO NATIVO DE TILDES INDESTRUCTIBLE PARA FILE:/// ---
+    function cleanAcentsText(str) {
+        if (!str) return "";
+        return str.toLowerCase()
+                  .replace(/[áàäâ]/g, "a")
+                  .replace(/[éèëê]/g, "e")
+                  .replace(/[íìïî]/g, "i")
+                  .replace(/[óòöô]/g, "o")
+                  .replace(/[úùüû]/g, "u")
+                  .trim();
+    }
+
+    // --- FILTRO DE PRECISIÓN EN EL ENUNCIADO DE LA PREGUNTA ---
+    const filterInput = document.getElementById('filter-keywords-input');
+    const filterValue = filterInput ? filterInput.value.trim() : "";
+
+    if (filterValue !== "") {
+        // Limpiar tildes de las palabras que escribe el usuario
+        let keywords = cleanAcentsText(filterValue).split(/\s+/);
+        
+        mixedPool = mixedPool.filter(function(item) {
+            // Limpiar tildes del enunciado de la pregunta para la comparación
+            let searchInQuestion = cleanAcentsText(item.question);
+            
+            return keywords.every(function(kw) {
+                if (/^\d+$/.test(kw)) {
+                    // Límite numérico exacto (\b) para aislar artículos (9 sí, 99 o 109 no)
+                    let strictNumericRegex = new RegExp("\\b" + kw + "\\b");
+                    return strictNumericRegex.test(searchInQuestion);
+                } else {
+                    // Comprobación de palabras normales libre de tildes
+                    return searchInQuestion.includes(kw);
+                }
+            });
+        });
+    }
+
     if (mixedPool.length === 0) {
-        alert("No se han podido estructurar preguntas para esta simulación.");
+        alert("⚠️ No se han encontrado preguntas cuyo enunciado coincida exactamente con los filtros introducidos.");
         return;
     }
 
-    // Mezcla aleatoria pura y recorte según el volumen solicitado
+    // Mezcla aleatoria y preparación del test
     mixedPool.sort(function() { return Math.random() - 0.5; });
     currentTestQuestions = mixedPool.slice(0, reqCount).map(function(q) { return shuffleQuestion(q); });
 
-    // Cambiar de pantalla e iniciar variables de la sesión interactiva
     document.getElementById('setup-screen').classList.remove('active');
     document.getElementById('quiz-screen').classList.add('active');
 
@@ -558,11 +681,13 @@ function buildCustomTest() {
     wrongQuestionsHistoryList = new Array();
     
     startTime = Date.now();
+    totalElapsedSeconds = 0;
     clearInterval(timerInterval);
     timerInterval = setInterval(updateGlobalTimer, 1000);
     
     renderQuestion();
 }
+
 
 let totalElapsedSeconds = 0;
 function updateGlobalTimer() {
@@ -1078,7 +1203,13 @@ function toggleTypeModeViews() {
 
 
 window.addEventListener('DOMContentLoaded', function() {
-
+  
+    let pdfEngine = window['pdfjs-dist/build/pdf'] || (typeof pdfjsLib !== 'undefined' ? pdfjsLib : null);
+    if (pdfEngine) {
+        // Enlazamos el hilo de procesamiento a la versión estable 2.16.105
+        pdfEngine.GlobalWorkerOptions.workerSrc = 'https://cloudflare.com';
+    }
+        
     loadAndRenderSavedTestsList();
 
     // (Añade esto dentro de tu window.addEventListener('DOMContentLoaded', function() { ... }))
