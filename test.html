@@ -467,77 +467,113 @@ function toggleModeViews() {
     const zone = document.getElementById('theme-selectors-group');
     if(zone) zone.style.display = isSelective ? "block" : "none";
 }
-
-// PARTE 2B DEFINITIVA: MOTOR DE ENUNCIADOS ULTRA-FIELES LIBRE DE RECORTES CIEGOS
+// PARTE 2B DEFINITIVA: MOTOR TIPO TEST CON INTERCEPCIÓN SEGURA DE ARTÍCULOS Y PAREJAS SINTÁCTICAS
 function extractQuestionsFromText(text, sourceName) {
     const cleanText = text.replace(/\s+/g, ' ');
-    // Separación por puntos para aislar disposiciones reales de tus apuntes
-    const sentences = cleanText.split(/[.]+/).map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 30; });
+    
+    // Fragmentación por puntos legislativos para aislar ideas con contenido completo
+    const legislativeRegex = /(?<!\b(articulo|art|apartado|apdo|capitulo|titulo|seccion|disp|disposicion)\s+\d{1,3})(?<!\b[a-zA-ZáéíóúÁÉÍÓÚñÑ])(?<!\b\d{1,3})\.[ ]+/i;
+    const rawSegments = cleanText.split(legislativeRegex).map(function(s) { return s ? s.trim() : ""; }).filter(function(s) { return s && s.length > 50; });
+    
     let dynamicBank = new Array();
 
-    const masterSentencesPool = JSON.parse(JSON.stringify(sentences));
+    rawSegments.forEach(function(sentence, sIdx) {
+        // Limpiar preámbulos numéricos técnicos del texto
+        let cleanSentence = sentence.replace(/^[\s"•·]*\d+[\s.]+/g, "")
+                                      .replace(/el\s+articulo\s+\d+\s+queda\s+redactado\s+como\s+sigue[\s:]*/i, "")
+                                      .replace(/art\.\s*\d+[\s.]*/i, "")
+                                      .replace(/^[\s"':.]+/g, "")
+                                      .trim();
 
-    sentences.forEach(function(sentence, sIdx) {
-        let questionText = "";
+        if (cleanSentence.length < 50) return;
+
+        // CORRECCIÓN CLAVE: Extraemos la cadena literal del índice [0] de forma segura antes del toUpperCase
+        let artMatch = sentence.match(/(articulo\s+\d+|art\.\s*\d+|titulo\s+[ivxlcd\d]+|capitulo\s+[ivxlcd\d]+)/i);
+        let headerPrefix = "";
+        if (artMatch && artMatch[0]) {
+            headerPrefix = `${artMatch[0].toUpperCase()}: `;
+        }
+
+        // ALGORITMO DE DETECCIÓN SINTÁCTICA ESTILO OPOSICIONES
+        let breakKeywords = /\b(cuando|será|sera|serán|seran|tendrá|tendra|tendrán|tendran|se\s+comunicará|se\s+comunicara|aprobará|aprobara|podrán|podran|corresponde)\b/i;
+        let match = cleanSentence.match(breakKeywords);
+        
+        let questionPart = "";
+        let correctOption = "";
+
+        if (match && match.index > 25 && match.index < cleanSentence.length - 20) {
+            questionPart = cleanSentence.substring(0, match.index).trim();
+            correctOption = cleanSentence.substring(match.index).trim();
+        } else {
+            let words = cleanSentence.split(" ");
+            let cutIndex = Math.floor(words.length * 0.6);
+            questionPart = words.slice(0, cutIndex).join(" ");
+            correctOption = words.slice(cutIndex).join(" ");
+        }
+
+        questionPart = questionPart.charAt(0).toUpperCase() + questionPart.slice(1);
+        correctOption = correctOption.charAt(0).toUpperCase() + correctOption.slice(1);
+        
+        if (!questionPart.endsWith(":") && !questionPart.endsWith("?")) {
+            questionPart += "...";
+        }
+
+        // Montamos el enunciado final largo y profesional tal cual tus ejemplos
+        let finalQuestionText = `${headerPrefix}${questionPart}`;
+
         let finalOptions = new Array();
-        finalOptions.push(sentence); 
+        finalOptions.push(correctOption); // Opción correcta en el índice 0
         
         let answers = new Array();
         answers.push(0);
 
-        // Identificar si la propia frase contiene un artículo explícito para usarlo como prefijo informativo
-        let artMatch = sentence.match(/(articulo\s+\d+|art\.\s*\d+)/i);
-        let prefix = artMatch ? `[${artMatch}] ` : "";
+        // FABRICACIÓN DE DISTRACTORES COMPETITIVOS
+        function buildCompetitiveFakes(correctText) {
+            let optionsPool = new Array();
+            
+            if (/\d+/.test(correctText)) {
+                let numbers = correctText.match(/\d+/g);
+                numbers.forEach(function(numStr) {
+                    let n = parseInt(numStr);
+                    let opt1 = correctText.replace(numStr, (n * 2));
+                    let opt2 = correctText.replace(numStr, "1");
+                    let opt3 = correctText.replace(numStr, "10");
+                    if (opt1 !== correctText && !optionsPool.includes(opt1)) optionsPool.push(opt1);
+                    if (opt2 !== correctText && !optionsPool.includes(opt2)) optionsPool.push(opt2);
+                    if (opt3 !== correctText && !optionsPool.includes(opt3)) optionsPool.push(opt3);
+                });
+            }
+            
+            let structuralFakes = [
+                correctText.replace(/\b(será|sera|tendrá|tendra)\b/i, "no existirá tal obligatoriedad ni plazo regulado en las normas"),
+                correctText.replace(/\b(se\s+comunicará|se\s+comunicara|aprobará|aprobara)\b/i, "se suspenderá de oficio la tramitación del procedimiento administrativo"),
+                correctText.replace(/\b(se\s+comunicará|se\s+comunicara|aprobará|aprobara)\b/i, "le corresponde dictaminar de forma expresa a la Administración General del Estado"),
+                correctText.replace(/Comunidad\s+Autónoma/i, "Administración General del Estado"),
+                correctText.replace(/Administración/i, "Junta de Gobierno Local")
+            ];
 
-        // ALGORITMO DE ENUNCIADO ULTRA-FIEL: En lugar de recortar a ciegas, se limpia la puntuación pesada
-        // y se vuelca la idea completa en la cabecera para que CUALQUIER palabra de la ley aparezca en la pregunta
-        let cleanContentText = sentence.replace(/(articulo\s+\d+|art\.\s*\d+)/i, "").trim();
-
-        let randomStyle = (sIdx + sentence.length) % 5;
-        
-        // CONSTRUCCIÓN DEL ENUNCIADO: Todo el contenido textual del artículo se escribe físicamente dentro de la pregunta
-        if (randomStyle === 0) {
-            questionText = `${prefix}¿Qué mandato o disposición legal se establece textualmente en el temario respecto a la siguiente premisa: "${cleanContentText}"?`;
-        } else if (randomStyle === 1) {
-            questionText = `${prefix}De acuerdo con la literalidad del texto normativo cargado, ¿cómo se regula el precepto que dicta: "${cleanContentText}"?`;
-        } else if (randomStyle === 2) {
-            questionText = `${prefix}Analizando los imperativos de tus apuntes, ¿cuál de las siguientes opciones transcribe con total exactitud lo dispuesto en la directriz: "${cleanContentText}"?`;
-        } else if (randomStyle === 3) {
-            questionText = `${prefix}¿Qué obligación, competencia o término formal se dispone explícitamente en relación con el redactado que establece: "${cleanContentText}"?`;
-        } else {
-            questionText = `${prefix}Examinando el material de estudio, ¿qué afirmación se ajusta fielmente y sin alteraciones al contenido literal de: "${cleanContentText}"?`;
-        }
-
-        function safeAddFake(fakeString) {
-            let cleanFake = fakeString.trim();
-            let isDuplicate = finalOptions.some(function(existingOpt) {
-                return existingOpt.toLowerCase().trim() === cleanFake.toLowerCase();
+            structuralFakes.forEach(function(f) {
+                if (f !== correctText && !optionsPool.includes(f)) optionsPool.push(f);
             });
-            if (!isDuplicate && cleanFake.length > 20 && finalOptions.length < 4) {
-                finalOptions.push(cleanFake);
-            }
+
+            if (optionsPool.length < 3) optionsPool.push("Así venga determinado expresamente por las normas de la Administración General del Estado.");
+            if (optionsPool.length < 3) optionsPool.push("No hayan sido ya convalidados de forma expresa por el órgano competente.");
+            if (optionsPool.length < 3) optionsPool.push("Se procederá al archivo inmediato de las actuaciones sin más trámite.");
+
+            return optionsPool.slice(0, 3);
         }
 
-        let poolIndices = masterSentencesPool.map(function(_, i) { return i; }).sort(function() { return Math.random() - 0.5; });
-        for (let i = 0; i < poolIndices.length; i++) {
-            let potentialFakeIdx = poolIndices[i];
-            if (potentialFakeIdx !== sIdx) {
-                safeAddFake(masterSentencesPool[potentialFakeIdx]);
-            }
-            if (finalOptions.length === 4) break;
-        }
+        let smartFakesList = buildCompetitiveFakes(correctOption);
+        smartFakesList.forEach(function(fakeOption) {
+            finalOptions.push(fakeOption);
+        });
 
-        if (finalOptions.length < 4) {
-            safeAddFake(sentence.replace(/será|deberá|corresponde|puede/gi, "quedará completamente suspendido de forma provisional"));
-            safeAddFake(sentence.replace(/siempre|en\s+todo\s+caso/gi, "únicamente bajo resolución rectoral extraordinaria previa"));
-        }
-
-        if (questionText && finalOptions.length === 4) {
+        if (finalQuestionText && finalOptions.length === 4) {
             dynamicBank.push({ 
-                question: questionText, 
+                question: finalQuestionText, 
                 options: finalOptions, 
                 answers: answers,
-                justification: sentence,
+                justification: sentence, // La retroalimentación inferior guarda el párrafo original completo del BOE para repasar
                 fileName: sourceName 
             });
         }
@@ -628,7 +664,7 @@ function buildCustomTest() {
         }
     }
 
-    // --- REEMPLAZO NATIVO DE TILDES INDESTRUCTIBLE PARA FILE:/// ---
+    // --- REEMPLAZO NATIVO DE TILDES INDESTRUCTIBLE PARA LOCAL ---
     function cleanAcentsText(str) {
         if (!str) return "";
         return str.toLowerCase()
@@ -640,25 +676,27 @@ function buildCustomTest() {
                   .trim();
     }
 
-    // --- FILTRO DE PRECISIÓN EN EL ENUNCIADO DE LA PREGUNTA ---
+    // --- FILTRO DE PRECISIÓN EN EL ENUNCIADO CON SOPORTE PARA COMAS ---
     const filterInput = document.getElementById('filter-keywords-input');
     const filterValue = filterInput ? filterInput.value.trim() : "";
 
     if (filterValue !== "") {
-        // Limpiar tildes de las palabras que escribe el usuario
-        let keywords = cleanAcentsText(filterValue).split(/\s+/);
+        // CORRECCIÓN INTEGRAL: Primero sustituimos las comas por espacios, y luego troceamos las palabras clave
+        let cleanInputKeywords = filterValue.replace(/,/g, " ");
+        let keywords = cleanAcentsText(cleanInputKeywords).split(/\s+/).filter(function(w) { return w.length > 0; });
         
         mixedPool = mixedPool.filter(function(item) {
-            // Limpiar tildes del enunciado de la pregunta para la comparación
+            // Limpiamos los acentos del enunciado de la pregunta generada para compararlo de forma fiel
             let searchInQuestion = cleanAcentsText(item.question);
             
+            // Comprobar que absolutamente todos los criterios separados por comas o espacios estén en el enunciado
             return keywords.every(function(kw) {
                 if (/^\d+$/.test(kw)) {
-                    // Límite numérico exacto (\b) para aislar artículos (9 sí, 99 o 109 no)
+                    // Límite numérico exacto (\b) para que el número del artículo sea aislado (9 sí, 99 o 109 no)
                     let strictNumericRegex = new RegExp("\\b" + kw + "\\b");
                     return strictNumericRegex.test(searchInQuestion);
                 } else {
-                    // Comprobación de palabras normales libre de tildes
+                    // Búsqueda de texto libre de tildes
                     return searchInQuestion.includes(kw);
                 }
             });
@@ -666,7 +704,7 @@ function buildCustomTest() {
     }
 
     if (mixedPool.length === 0) {
-        alert("⚠️ No se han encontrado preguntas cuyo enunciado coincida exactamente con los filtros introducidos.");
+        alert("⚠️ No se ha encontrado ninguna pregunta en tus apuntes cuyo ENUNCIADO contenga todos los filtros introducidos simultáneamente.");
         return;
     }
 
